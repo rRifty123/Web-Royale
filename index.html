@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Royale</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="authScreen">
+
+    <h1>WEB ROYALE</h1>
+
+    <input id="username" placeholder="Username">
+
+    <input id="email" placeholder="Email (Optional)">
+
+    <input id="password" type="password" placeholder="Password">
+
+    <select id="device">
+        <option value="pc">PC Controls</option>
+        <option value="mobile">Mobile Controls</option>
+    </select>
+
+    <button id="signupBtn">Sign Up</button>
+    <button id="loginBtn">Login</button>
+
+</div>
+
+<div id="lobbyScreen" style="display:none">
+
+    <div id="topBar">
+
+        <button id="homeTab">Home</button>
+
+        <button id="loadoutTab">Loadouts</button>
+
+        <button id="partyTab">Party</button>
+
+        <button id="settingsBtn">⚙</button>
+
+    </div>
+
+    <div id="content"></div>
+
+</div>
+
+<script type="module" src="js/firebase.js"></script>
+<script type="module" src="js/auth.js"></script>
+
+</body>
+</html>
