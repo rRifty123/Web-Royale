@@ -59,7 +59,8 @@
                 <button id="nav-party" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Party</button>
                 <button id="nav-settings" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Settings</button>
             </nav>
-            <div class="w-12"></div> </header>
+            <div class="w-12"></div>
+        </header>
 
         <main class="flex-1 flex items-center justify-center relative">
             
@@ -188,9 +189,11 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // CONNECTED PROPERLY WITH YOUR SPECIFIC FIREBASE PROJECT CONFIG + DATABASE URL
         const firebaseConfig = {
             apiKey: "AIzaSyBjLc2OSSYJBQQ3-Eb_2Q_bU9sjhU5bS1c",
             authDomain: "web-royale-1ea63.firebaseapp.com",
+            databaseURL: "https://web-royale-1ea63-default-rtdb.firebaseio.com",
             projectId: "web-royale-1ea63",
             storageBucket: "web-royale-1ea63.firebasestorage.app",
             messagingSenderId: "1015896765313",
@@ -211,13 +214,13 @@
         let cameraZoomDistance = 7;
 
         let scene, camera, renderer;
-        let gameState = 'MENU'; // MENU, LOBBY, PLAYING, PAUSED, END
+        let gameState = 'MENU'; 
         let previousGameState = 'PLAYING';
         
         let player = {
             avatar: null,
             hp: 100,
-            speed: 0.28, // Scaled speed for a significantly bigger map environment
+            speed: 0.28, 
             x: 0, z: 0, rotY: 0,
             vx: 0, vz: 0,
             isMoving: false
@@ -232,7 +235,7 @@
         let animationTime = 0;
 
         let stormCircleMesh;
-        let stormRadius = 380; // Larger boundary matching massive ground maps
+        let stormRadius = 380; 
         const minStormRadius = 2;
 
         const LOADOUTS = [
@@ -283,7 +286,7 @@
             let email = inputEmail.value.trim() || `${username.toLowerCase()}@webroyale.internal`;
             const password = inputPassword.value.trim();
 
-            if(!username || !password) return alert("Fill in blanks.");
+            if(!username || !password) return alert("Please fill in required fields.");
             try {
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, password);
@@ -413,7 +416,7 @@
             
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
-            player.avatar.position.set(320, 0, 320); // Send back to isolated layout preview platform
+            player.avatar.position.set(320, 0, 320); 
             switchTab('home');
         }
 
@@ -429,7 +432,6 @@
             stormRadius = 380;
             popupMatchmaking.classList.add('hidden');
             
-            // FULLY HIDES HOME/LOBBY INTERFACES PREVENTING CLUTTER OVERLAPS
             uiNavigationHeader.classList.add('hidden');
             document.getElementById('home-interactive-elements').classList.add('hidden');
             overlayLoadingIsland.classList.remove('hidden');
@@ -455,7 +457,6 @@
             hudIngame.classList.remove('hidden');
             gameState = 'PLAYING';
             
-            // Center spawn area on custom image blueprint layout
             player.avatar.position.set(0, 0, 40); 
             player.hp = 100;
             
@@ -490,11 +491,11 @@
             avatar.userData.weapon = weaponMesh;
         }
 
-        // --- CUSTOM IMAGE DESIGN ENVIRONMENT GENERATION MAP ---
+        // --- ENVIRONMENT GENERATION ---
         function init3DEngine() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
-            scene.fog = new THREE.FogExp2(0x0f172a, 0.006); // Decreased fog density for larger draw distances
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.006); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -505,7 +506,7 @@
             const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(100, 300, 100); scene.add(sun);
 
             player.avatar = createR6Avatar(0x4f46e5, LOADOUTS[selectedLoadoutIndex]);
-            player.avatar.position.set(320, 0, 320); // Isolation startup vector position
+            player.avatar.position.set(320, 0, 320); 
             scene.add(player.avatar);
 
             window.addEventListener('resize', onWindowResize);
@@ -523,7 +524,7 @@
             if(groundGrid) return;
 
             // 1. MASSIVE TERRAIN GROUND MAP RADIAL STRUCTURE BASE
-            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 })); // Green grass base
+            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 })); 
             groundGrid.rotateX(-Math.PI / 2);
             scene.add(groundGrid);
 
@@ -532,12 +533,12 @@
             isolationGrid.position.set(320, -0.5, 320);
             scene.add(isolationGrid);
 
-            // 3. THE LAKE (CENTER OF DRAWING POOL)
+            // 3. THE LAKE 
             const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.2 }));
             lakeMesh.position.set(0, 0.1, 0);
             scene.add(lakeMesh);
 
-            // 4. THE CITY (TOP RIGHT QUADRANT - TALL SKYSCRAPERS GRID)
+            // 4. THE CITY
             for(let x=0; x<4; x++){
                 for(let z=0; z<4; z++){
                     const h = Math.random()*35 + 15;
@@ -547,7 +548,7 @@
                 }
             }
 
-            // 5. THE TOWN (TOP LEFT QUADRANT - RESIDENTIAL HOUSES SUBURBS)
+            // 5. THE TOWN
             for(let i=0; i<15; i++) {
                 const houseGroup = new THREE.Group();
                 const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshStandardMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
@@ -556,7 +557,7 @@
                 scene.add(houseGroup);
             }
 
-            // 6. THE FOREST (MID-LEFT ZONE AREA - PINE BLOCKY TREES NATURE REGION)
+            // 6. THE FOREST
             for(let i=0; i<80; i++) {
                 const treeGroup = new THREE.Group();
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshStandardMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
@@ -565,20 +566,19 @@
                 scene.add(treeGroup);
             }
 
-            // 7. THE FARM (MID-RIGHT QUADRANT - TILLED CROPS FIELDS AND BARN HOUSES STRUCTURES)
+            // 7. THE FARM
             const fieldGeo = new THREE.PlaneGeometry(70, 70);
-            const fieldMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 1.0 }); // Rich brown soil dirt texture map representations
+            const fieldMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 1.0 }); 
             const cropField = new THREE.Mesh(fieldGeo, fieldMat); cropField.rotateX(-Math.PI/2); cropField.position.set(130, 0.1, 40); scene.add(cropField);
             
             const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
             const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshStandardMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
 
-            // 8. THE STREETS (BOTTOM STRIP HORIZONTAL BLOCK - LINEAR HIGHWAY NETWORKS ROADWAY LINES)
+            // 8. THE STREETS
             const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }));
             asphaltRoad.rotateX(-Math.PI/2); asphaltRoad.position.set(0, 0.1, 140);
             scene.add(asphaltRoad);
 
-            // Storm wall containment structure configuration settings parameters initialization
             stormCircleMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 100, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
             stormCircleMesh.position.y = 50;
             scene.add(stormCircleMesh);
@@ -596,14 +596,13 @@
                 entities.push({ avatar, isFriend: true, name, hp: 100, vx: 0, vz: 0, lastShotTime: 0 });
             });
 
-            // Enemy bots map assignment dispersals over wide-area radius boundaries positions coordinates
+            // Enemy bots map assignment dispersals
             for(let i=0; i<totalOpponents; i++) {
                 const randLd = LOADOUTS[Math.floor(Math.random() * LOADOUTS.length)];
                 const avatar = createR6Avatar(0xb91c1c, randLd);
                 
-                // DISPERSED SPAWNING: Bot spread matches large map matrix scale positions perfectly
                 let ang = Math.random() * Math.PI * 2;
-                let rad = 50 + Math.random() * 240; // Disperses bots widely across map regions
+                let rad = 50 + Math.random() * 240; 
                 avatar.position.set(Math.cos(ang)*rad, 0, Math.sin(ang)*rad);
                 scene.add(avatar);
 
@@ -628,7 +627,7 @@
             }
         }
 
-        // --- PLAYER SYSTEMS CONTROLS INTERFACES ---
+        // --- PLAYER CONTROLS ---
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
         function onKeyDown(e) {
             if(gameState === 'MENU' || gameState === 'PAUSED') return;
@@ -656,7 +655,7 @@
                 const len = Math.sqrt(toEntX*toEntX + toEntZ*toEntZ);
                 const dot = ((toEntX/len) * dx) + ((toEntZ/len) * dz);
 
-                if(dot > 0.99 && len < 140) { // Extended range checking metrics calculation structures matching larger map scale tracking profiles
+                if(dot > 0.99 && len < 140) { 
                     if(ent.isFriend) return;
                     ent.hp -= LOADOUTS[selectedLoadoutIndex].damage;
                     if(ent.hp <= 0) scene.remove(ent.avatar);
@@ -697,7 +696,7 @@
         document.getElementById('btn-end-home').onclick = () => { screenMatchEnd.classList.add('hidden'); cleanMatchExitToMenu(); };
         document.getElementById('btn-end-replay').onclick = () => { screenMatchEnd.classList.add('hidden'); startLobbySequence(gameModeSelection); };
 
-        // --- ANIMATION FRAME ENGINE INTERACTIVE LOOP ---
+        // --- ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
             animationTime += 0.02;
@@ -712,7 +711,6 @@
                 player.avatar.position.x += mX * player.speed; player.avatar.position.z += mZ * player.speed;
                 applyR6WalkingAnimation(player.avatar, player.isMoving, animationTime);
 
-                // DYNAMIC ZOOM VALUE UTILIZED LIVE HERE:
                 camera.position.x = player.avatar.position.x + Math.sin(player.rotY) * cameraZoomDistance;
                 camera.position.z = player.avatar.position.z + Math.cos(player.rotY) * cameraZoomDistance;
                 camera.position.y = player.avatar.position.y + (cameraZoomDistance * 0.65);
@@ -734,7 +732,6 @@
 
                     const distanceToPlayer = ent.avatar.position.distanceTo(player.avatar.position);
                     
-                    // BOT TARGET ENGAGEMENT RANGE STRETCHED SENSITIVE MATCHING BIGGER ENVIRONMENTS
                     if(distanceToPlayer < 85) { 
                         ent.avatar.lookAt(player.avatar.position.x, ent.avatar.position.y, player.avatar.position.z);
                         applyR6WalkingAnimation(ent.avatar, true, animationTime);
