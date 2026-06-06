@@ -475,15 +475,16 @@
         function init3DEngine() {
             if(scene) return;
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xaec6cf);
-            scene.fog = new THREE.FogExp2(0xaec6cf, 0.0015); 
+            
+            // CRITICAL FIX: Wrapped the hexadecimal color cleanly as a valid string value context
+            scene.background = new THREE.Color('#aec6cf');
+            scene.fog = new THREE.FogExp2('#aec6cf', 0.0015); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // STABLE LIGHTING CONFIGURATION: High ambient intensity combined with strong directional sun coordinates
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambientLight);
             
