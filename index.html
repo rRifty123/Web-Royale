@@ -1,51 +1,813 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Web Royale</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Web Royale</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background-color: #0b0f19; color: #fff; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        .hidden { display: none !important; }
+        /* Simple crosshair for the game */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 10px; height: 10px;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(255,255,255,0.7);
+            border-radius: 50%; pointer-events: none; z-index: 10;
+        }
+    </style>
 </head>
 <body>
 
-<div id="authScreen">
-
-    <h1>WEB ROYALE</h1>
-
-    <input id="username" placeholder="Username">
-
-    <input id="email" placeholder="Email (Optional)">
-
-    <input id="password" type="password" placeholder="Password">
-
-    <select id="device">
-        <option value="pc">PC Controls</option>
-        <option value="mobile">Mobile Controls</option>
-    </select>
-
-    <button id="signupBtn">Sign Up</button>
-    <button id="loginBtn">Login</button>
-
-</div>
-
-<div id="lobbyScreen" style="display:none">
-
-    <div id="topBar">
-
-        <button id="homeTab">Home</button>
-
-        <button id="loadoutTab">Loadouts</button>
-
-        <button id="partyTab">Party</button>
-
-        <button id="settingsBtn">⚙</button>
-
+    <div id="auth-screen" class="flex flex-col items-center justify-center h-screen w-screen absolute inset-0 z-50 bg-slate-900">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
+            <h2 id="auth-title" class="text-3xl font-extrabold text-center mb-6 text-indigo-400">WEB ROYALE</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Username *</label>
+                    <input type="text" id="auth-username" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="Player123">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Email (Optional)</label>
+                    <input type="email" id="auth-email" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Password *</label>
+                    <input type="password" id="auth-password" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="••••••••">
+                </div>
+                <button id="auth-primary-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded font-bold transition mt-4">Sign Up</button>
+                <p class="text-center text-sm text-slate-400 mt-2">
+                    <span id="auth-toggle-text">Already have an account?</span> 
+                    <a href="#" id="auth-toggle-link" class="text-indigo-400 underline ml-1">Log In</a>
+                </p>
+            </div>
+        </div>
     </div>
 
-    <div id="content"></div>
+    <div id="game-interface" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between h-screen w-screen">
+        
+        <header class="w-full bg-slate-900/90 border-b border-slate-800 p-4 flex justify-between items-center pointer-events-auto">
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <span id="user-display" class="font-bold text-slate-200">Loading...</span>
+            </div>
+            <nav class="flex space-x-4">
+                <button id="nav-home" class="px-4 py-2 rounded font-bold bg-indigo-600 text-white transition">Home</button>
+                <button id="nav-loadout" class="px-4 py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Loadout</button>
+                <button id="nav-party" class="px-4 py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Party</button>
+            </nav>
+            <button id="btn-logout" class="text-sm text-slate-400 hover:text-red-400">Logout</button>
+        </header>
 
-</div>
+        <main class="flex-1 flex items-center justify-center relative">
+            
+            <div id="page-home" class="absolute inset-0 flex flex-col justify-between p-12 items-end pointer-events-none">
+                <div class="w-full flex justify-between items-end mt-auto pointer-events-auto">
+                    <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Selected Loadout</h3>
+                        <p id="home-loadout-display" class="text-xl font-black text-indigo-400">Assault Class</p>
+                    </div>
+                    <button id="btn-play-match" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-12 py-5 rounded-xl font-black text-3xl shadow-lg transition transform hover:scale-105">
+                        PLAY MATCH
+                    </button>
+                </div>
+            </div>
 
-<script type="module" src="js/firebase.js"></script>
-<script type="module" src="js/auth.js"></script>
+            <div id="page-loadout" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-2xl pointer-events-auto shadow-2xl">
+                <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2 text-indigo-400">CHOOSE YOUR LOADOUT</h2>
+                <div id="loadout-list" class="grid grid-cols-1 gap-3">
+                    </div>
+            </div>
 
+            <div id="page-party" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-md pointer-events-auto shadow-2xl">
+                <h2 class="text-2xl font-black mb-4 text-indigo-400">PARTY MANAGMENT</h2>
+                <div class="flex space-x-2 mb-6">
+                    <input type="text" id="party-invite-input" class="flex-1 p-2 rounded bg-slate-800 border border-slate-700 text-white text-sm" placeholder="Enter friend's username...">
+                    <button id="btn-invite-friend" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded font-bold text-sm">Invite</button>
+                </div>
+                <h3 class="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">Current Squad</h3>
+                <div id="party-members-list" class="space-y-2">
+                    </div>
+            </div>
+
+            <div id="popup-matchmaking" class="hidden absolute bg-slate-950/95 border border-slate-700 p-8 rounded-xl text-center max-w-sm pointer-events-auto shadow-2xl animate-fade-in">
+                <h3 class="text-2xl font-black mb-2">SELECT GAME MODE</h3>
+                <p class="text-slate-400 text-sm mb-6">Choose whether you want to face synthetic AI units or online players.</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="mode-bots" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-4 rounded-lg flex flex-col items-center transition">
+                        <span class="text-xl font-bold">VS BOTS</span>
+                        <span class="text-xs text-indigo-400 mt-1">50 Combatants</span>
+                    </button>
+                    <button id="mode-people" class="bg-indigo-600 hover:bg-indigo-500 p-4 rounded-lg flex flex-col items-center transition">
+                        <span class="text-xl font-bold">ONLINE</span>
+                        <span class="text-xs text-amber-300 mt-1">20 Real Players</span>
+                    </button>
+                </div>
+                <button id="close-matchmaking" class="mt-4 text-xs text-slate-500 underline hover:text-slate-300">Cancel</button>
+            </div>
+
+            <div id="loading-island-overlay" class="hidden absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 mb-4"></div>
+                <h2 id="lobby-status-text" class="text-2xl font-bold mb-2">Loading Warmup Island...</h2>
+                <p id="lobby-timer" class="text-indigo-400 font-mono text-lg">Waiting for players to connect...</p>
+            </div>
+
+            <div id="ingame-hud" class="hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-6 w-full h-full">
+                <div class="flex justify-between items-start w-full">
+                    <div class="bg-black/50 px-4 py-2 rounded text-sm backdrop-blur-sm border border-white/10">
+                        <span class="text-slate-400">ALIVE:</span> <span id="hud-alive-count" class="font-black text-emerald-400 text-lg">51</span>
+                    </div>
+                    <div class="bg-black/50 px-6 py-2 rounded-full text-center border border-white/10">
+                        <span id="hud-zone-timer" class="font-mono text-amber-400 font-bold">WARMUP LOBBY</span>
+                    </div>
+                </div>
+                <div id="crosshair"></div>
+                <div class="flex justify-between items-end w-full">
+                    <div class="w-64 bg-black/50 p-4 rounded border border-white/10 backdrop-blur-sm">
+                        <div class="flex justify-between text-xs mb-1 font-bold">
+                            <span>HEALTH</span>
+                            <span id="hud-hp-text">100/100</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                            <div id="hud-hp-bar" class="bg-emerald-500 h-full w-full transition-all duration-100"></div>
+                        </div>
+                    </div>
+                    <div class="bg-black/50 px-6 py-4 rounded border border-white/10 text-right backdrop-blur-sm">
+                        <div id="hud-weapon-name" class="text-lg font-black text-indigo-400">Assault Rifle</div>
+                        <div class="text-xs text-slate-400">AMMO: <span class="text-white font-bold">∞</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="match-end-screen" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-center pointer-events-auto z-50">
+                <h1 id="match-end-title" class="text-6xl font-black text-amber-500 mb-4 tracking-wider drop-shadow-lg">YOU WIN!</h1>
+                <p id="match-end-sub" class="text-slate-400 mb-8 max-w-sm">You dominated the arena and survived the simulation.</p>
+                <div class="flex space-x-4">
+                    <button id="btn-end-home" class="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-lg font-bold border border-slate-600 transition">Back to Home</button>
+                    <button id="btn-end-replay" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-lg font-bold text-white transition">Match Again</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Provided Web App configuration details
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjLc2OSSYJBQQ3-Eb_2Q_bU9sjhU5bS1c",
+            authDomain: "web-royale-1ea63.firebaseapp.com",
+            projectId: "web-royale-1ea63",
+            storageBucket: "web-royale-1ea63.firebasestorage.app",
+            messagingSenderId: "1015896765313",
+            appId: "1:1015896765313:web:1d2614fc87bb2c51d2ae80",
+            measurementId: "G-STYMCCJL30"
+        };
+
+        // Init Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // --- GLOBAL SYSTEM STATE ---
+        let currentUser = null;
+        let isLoginMode = false; // Starts in Sign Up Mode
+        let activeTab = 'home';
+        let selectedLoadoutIndex = 0;
+        let myParty = { leader: null, members: [] };
+
+        // Game specific engine states
+        let scene, camera, renderer;
+        let gameState = 'MENU'; // MENU, LOBBY, PLAYING, END
+        let player = {
+            mesh: null,
+            hp: 100,
+            speed: 0.15,
+            x: 0, z: 0, rotY: 0,
+            vx: 0, vz: 0
+        };
+        let inputs = { w: false, a: false, s: false, d: false };
+        let entities = []; // Bots or other simulated players
+        let particles = [];
+        let totalOpponents = 50;
+        let gameModeSelection = 'bots';
+        let matchCountdown = 5;
+
+        // Predefined starting loadout array 
+        const LOADOUTS = [
+            { name: "Assault Ranger", weapon: "AR-15 Carbine", damage: 25, speed: 0.15, color: 0x4f46e5 },
+            { name: "Stealth Operative", weapon: "Silenced SMG", damage: 15, speed: 0.20, color: 0x10b981 },
+            { name: "Heavy Juggernaut", weapon: "Light Machine Gun", damage: 35, speed: 0.10, color: 0xf59e0b },
+            { name: "Apex Marksman", weapon: "Bolt-Action Sniper", damage: 65, speed: 0.12, color: 0xef4444 },
+            { name: "Skirmish Specialist", weapon: "Tactical Shotgun", damage: 45, speed: 0.16, color: 0xec4899 }
+        ];
+
+        // --- DOM ELEMENT REFERENCES ---
+        const uiAuthScreen = document.getElementById('auth-screen');
+        const uiGameInterface = document.getElementById('game-interface');
+        const uiAuthTitle = document.getElementById('auth-title');
+        const uiAuthPrimaryBtn = document.getElementById('auth-primary-btn');
+        const uiAuthToggleText = document.getElementById('auth-toggle-text');
+        const uiAuthToggleLink = document.getElementById('auth-toggle-link');
+        const inputUsername = document.getElementById('auth-username');
+        const inputEmail = document.getElementById('auth-email');
+        const inputPassword = document.getElementById('auth-password');
+        const txtUserDisplay = document.getElementById('user-display');
+        
+        const navHome = document.getElementById('nav-home');
+        const navLoadout = document.getElementById('nav-loadout');
+        const navParty = document.getElementById('nav-party');
+        const pageHome = document.getElementById('page-home');
+        const pageLoadout = document.getElementById('page-loadout');
+        const pageParty = document.getElementById('page-party');
+        
+        const popupMatchmaking = document.getElementById('popup-matchmaking');
+        const overlayLoadingIsland = document.getElementById('loading-island-overlay');
+        const hudIngame = document.getElementById('ingame-hud');
+        const screenMatchEnd = document.getElementById('match-end-screen');
+
+        // --- AUTHENTICATION FLOW MANAGEMENT ---
+        uiAuthToggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            uiAuthTitle.innerText = isLoginMode ? "LOG IN TO PROFILE" : "CREATE ACCOUNT";
+            uiAuthPrimaryBtn.innerText = isLoginMode ? "Log In" : "Sign Up";
+            uiAuthToggleText.innerText = isLoginMode ? "New to the arena?" : "Already have an account?";
+            uiAuthToggleLink.innerText = isLoginMode ? "Sign Up Free" : "Log In";
+        });
+
+        uiAuthPrimaryBtn.addEventListener('click', async () => {
+            const username = inputUsername.value.trim();
+            let email = inputEmail.value.trim();
+            const password = inputPassword.value.trim();
+
+            if(!username || !password) {
+                alert("Please fill in the required Username and Password slots.");
+                return;
+            }
+            // If email is left blank, generate a dynamic mock fallback email schema for Firebase Auth handling
+            if(!email) {
+                email = `${username.toLowerCase()}@webroyale.internal`;
+            }
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const userCredential = await createWithUsername(email, password, username);
+                }
+            } catch (error) {
+                alert(`Authentication Fault: ${error.message}`);
+            }
+        });
+
+        async function createWithUsername(email, password, username) {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            // Save username map reference inside Realtime Database
+            await set(ref(db, 'users/' + cred.user.uid), {
+                username: username,
+                created: Date.now()
+            });
+            return cred;
+        }
+
+        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                // Fetch user data profiles
+                onValue(ref(db, 'users/' + user.uid), (snapshot) => {
+                    const data = snapshot.val();
+                    const username = data ? data.username : user.email.split('@')[0];
+                    txtUserDisplay.innerText = username.toUpperCase();
+                    setupPartyListeners(username);
+                }, { onlyOnce: true });
+
+                uiAuthScreen.classList.add('hidden');
+                uiGameInterface.classList.remove('hidden');
+                init3DEngine();
+            } else {
+                currentUser = null;
+                uiAuthScreen.classList.remove('hidden');
+                uiGameInterface.classList.add('hidden');
+                stop3DEngine();
+            }
+        });
+
+        // --- NAVIGATION MENU INTERACTION ---
+        function switchTab(tabName) {
+            activeTab = tabName;
+            [pageHome, pageLoadout, pageParty].forEach(p => p.classList.add('hidden'));
+            [navHome, navLoadout, navParty].forEach(n => n.setAttributes?.('class', 'px-4 py-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition'));
+            
+            // Standard CSS styling updates manually override
+            navHome.className = "px-4 py-2 rounded font-bold bg-slate-800 text-slate-300 transition";
+            navLoadout.className = "px-4 py-2 rounded font-bold bg-slate-800 text-slate-300 transition";
+            navParty.className = "px-4 py-2 rounded font-bold bg-slate-800 text-slate-300 transition";
+
+            if(tabName === 'home') {
+                pageHome.classList.remove('hidden');
+                navHome.className = "px-4 py-2 rounded font-bold bg-indigo-600 text-white transition";
+            } else if (tabName === 'loadout') {
+                pageLoadout.classList.remove('hidden');
+                navLoadout.className = "px-4 py-2 rounded font-bold bg-indigo-600 text-white transition";
+                renderLoadouts();
+            } else if (tabName === 'party') {
+                pageParty.classList.remove('hidden');
+                navParty.className = "px-4 py-2 rounded font-bold bg-indigo-600 text-white transition";
+            }
+        }
+
+        navHome.addEventListener('click', () => switchTab('home'));
+        navLoadout.addEventListener('click', () => switchTab('loadout'));
+        navParty.addEventListener('click', () => switchTab('party'));
+
+        // --- LOADOUT HANDLING ---
+        function renderLoadouts() {
+            const container = document.getElementById('loadout-list');
+            container.innerHTML = '';
+            LOADOUTS.forEach((ld, idx) => {
+                const item = document.createElement('div');
+                const isSelected = idx === selectedLoadoutIndex;
+                item.className = `p-4 rounded-xl border flex justify-between items-center cursor-pointer transition ${isSelected ? 'bg-indigo-600/30 border-indigo-500' : 'bg-slate-800/60 border-slate-700 hover:border-slate-500'}`;
+                item.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-white">${ld.name}</h4>
+                        <p class="text-xs text-slate-400">Weapon Primary: ${ld.weapon} | Base DMG: ${ld.damage}</p>
+                    </div>
+                    <span class="text-xs font-black uppercase px-3 py-1 rounded ${isSelected ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-400'}">
+                        ${isSelected ? 'Equipped' : 'Equip'}
+                    </span>
+                `;
+                item.addEventListener('click', () => {
+                    selectedLoadoutIndex = idx;
+                    document.getElementById('home-loadout-display').innerText = LOADOUTS[idx].name;
+                    updatePlayerVisualClass(LOADOUTS[idx].color);
+                    renderLoadouts();
+                });
+                container.appendChild(item);
+            });
+        }
+
+        // --- REALTIME PARTY SIMULATION FLOW ---
+        function setupPartyListeners(username) {
+            myParty.leader = username;
+            updatePartyUI();
+            
+            document.getElementById('btn-invite-friend').onclick = () => {
+                const fInput = document.getElementById('party-invite-input');
+                const friend = fInput.value.trim();
+                if(friend && !myParty.members.includes(friend)) {
+                    myParty.members.push(friend);
+                    fInput.value = '';
+                    updatePartyUI();
+                }
+            };
+        }
+
+        function updatePartyUI() {
+            const listContainer = document.getElementById('party-members-list');
+            listContainer.innerHTML = `
+                <div class="flex justify-between items-center p-2 rounded bg-indigo-950/40 border border-indigo-900/50">
+                    <span class="text-sm font-semibold text-slate-200">👑 ${myParty.leader} (You)</span>
+                    <span class="text-xs text-indigo-400 font-bold uppercase">Leader</span>
+                </div>
+            `;
+            myParty.members.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 rounded bg-slate-800 text-sm";
+                div.innerHTML = `<span>👤 ${m}</span><span class="text-xs text-emerald-400">Ready</span>`;
+                listContainer.appendChild(div);
+            });
+        }
+
+        // --- MATCHMAKING & LOBBY SYSTEM ---
+        document.getElementById('btn-play-match').addEventListener('click', () => {
+            popupMatchmaking.classList.remove('hidden');
+        });
+        document.getElementById('close-matchmaking').addEventListener('click', () => {
+            popupMatchmaking.classList.add('hidden');
+        });
+
+        document.getElementById('mode-bots').addEventListener('click', () => startLobbySequence('bots'));
+        document.getElementById('mode-people').addEventListener('click', () => startLobbySequence('people'));
+
+        function startLobbySequence(mode) {
+            gameModeSelection = mode;
+            totalOpponents = mode === 'bots' ? 50 : 20;
+            popupMatchmaking.classList.add('hidden');
+            overlayLoadingIsland.classList.remove('hidden');
+            
+            gameState = 'LOBBY';
+            matchCountdown = 5;
+            
+            buildMatchEnvironment();
+
+            const timerInterval = setInterval(() => {
+                matchCountdown--;
+                document.getElementById('lobby-status-text').innerText = "Warmup Island Matchmaking...";
+                document.getElementById('lobby-timer').innerText = `Teleporting to combat drop zone in ${matchCountdown}s...`;
+                
+                if (matchCountdown <= 0) {
+                    clearInterval(timerInterval);
+                    executeBattleDrop();
+                }
+            }, 1000);
+        }
+
+        function executeBattleDrop() {
+            overlayLoadingIsland.classList.add('hidden');
+            hudIngame.classList.remove('hidden');
+            gameState = 'PLAYING';
+            
+            // Reposition current player to main island domain center
+            player.mesh.position.set(0, 1, 0);
+            player.hp = 100;
+            updateHUD();
+
+            // Setup Combatant Entities
+            spawnBattlefieldEntities();
+        }
+
+        // --- 3D ENGINE CORE MODULE (THREE.JS) ---
+        let environmentGround, warmupIslandGround;
+
+        function init3DEngine() {
+            const container = document.body;
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.015);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting profiles
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffbeb, 0.8);
+            sunLight.position.set(40, 100, 40);
+            scene.add(sunLight);
+
+            // Generate Basic Main Player Avatar Representation
+            const pGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.8, 16);
+            const pMat = new THREE.MeshStandardMaterial({ color: LOADOUTS[selectedLoadoutIndex].color, roughness: 0.4 });
+            player.mesh = new THREE.Mesh(pGeo, pMat);
+            player.mesh.position.set(120, 1, 120); // Spawns initially on the isolation platform island
+            scene.add(player.mesh);
+
+            // Attach standard interaction events
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onPlayerShoot);
+
+            // Request initial framing execution loop
+            animate();
+        }
+
+        function stop3DEngine() {
+            gameState = 'MENU';
+            if(renderer) {
+                renderer.domElement.remove();
+                renderer.dispose();
+            }
+        }
+
+        function updatePlayerVisualClass(hexColor) {
+            if(player.mesh) player.mesh.material.color.setHex(hexColor);
+        }
+
+        function buildMatchEnvironment() {
+            // Remove existing maps if present
+            if(environmentGround) scene.add(environmentGround);
+            
+            // 1. THE MAIN PLAYING ZONE MAP
+            const mainMapGeo = new THREE.PlaneGeometry(300, 300, 20, 20);
+            mainMapGeo.rotateX(-Math.PI / 2);
+            // Simple procedural vertex height manipulation to look like hills
+            const pos = mainMapGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+                pos.setY(i, Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3);
+            }
+            mainMapGeo.computeVertexNormals();
+
+            const mainMapMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, flatShading: true });
+            environmentGround = new THREE.Mesh(mainMapGeo, mainMapMat);
+            scene.add(environmentGround);
+
+            // 2. WARMUP ISOLATION ISLAND PLATFORM
+            const islandGeo = new THREE.BoxGeometry(40, 1, 40);
+            const islandMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+            warmupIslandGround = new THREE.Mesh(islandGeo, islandMat);
+            warmupIslandGround.position.set(120, -0.4, 120);
+            scene.add(warmupIslandGround);
+
+            // Setup default boundaries objects like colorful pillars across map grid layout spaces
+            for(let i=0; i<40; i++){
+                const pillarGeo = new THREE.BoxGeometry(2, Math.random()*8+4, 2);
+                const pillarMat = new THREE.MeshStandardMaterial({color: 0x475569});
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                pillar.position.set(Math.random()*200 - 100, pillarGeo.parameters.height/2, Math.random()*200 - 100);
+                scene.add(pillar);
+            }
+        }
+
+        function spawnBattlefieldEntities() {
+            // Clean out old elements
+            entities.forEach(e => scene.remove(e.mesh));
+            entities = [];
+
+            // Spawn Friends/Party members if applicable (Teammate Simulation)
+            myParty.members.forEach((memName, idx) => {
+                const buddyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.8, 16);
+                const buddyMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 }); // Teal for friendlies
+                const mesh = new THREE.Mesh(buddyGeo, buddyMat);
+                mesh.position.set(Math.random()*10 - 5, 1, Math.random()*10 - 5);
+                scene.add(mesh);
+                
+                entities.push({
+                    mesh: mesh,
+                    isFriend: true,
+                    name: memName,
+                    hp: 100,
+                    vx: 0, vz: 0
+                });
+            });
+
+            // Spawn standard enemy targets
+            for(let i = 0; i < totalOpponents; i++) {
+                const enemyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.8, 16);
+                const enemyMat = new THREE.MeshStandardMaterial({ color: 0xef4444 }); // Crimson variant color indicators
+                const mesh = new THREE.Mesh(enemyGeo, enemyMat);
+                
+                // Disperse around global arena layout spectrum points randomly
+                mesh.position.set(Math.random() * 260 - 130, 1, Math.random() * 260 - 130);
+                scene.add(mesh);
+
+                entities.push({
+                    mesh: mesh,
+                    isFriend: false,
+                    name: `BotCombatant_${i+1}`,
+                    hp: 100,
+                    vx: (Math.random() - 0.5) * 0.1,
+                    vz: (Math.random() - 0.5) * 0.1
+                });
+            }
+            updateHUD();
+        }
+
+        // --- ENGINE EVENT HANDLERS ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(e) {
+            if(gameState === 'MENU') return;
+            if(e.key.toLowerCase() === 'w') inputs.w = true;
+            if(e.key.toLowerCase() === 'a') inputs.a = true;
+            if(e.key.toLowerCase() === 's') inputs.s = true;
+            if(e.key.toLowerCase() === 'd') inputs.d = true;
+        }
+
+        function onKeyUp(e) {
+            if(e.key.toLowerCase() === 'w') inputs.w = false;
+            if(e.key.toLowerCase() === 'a') inputs.a = false;
+            if(e.key.toLowerCase() === 's') inputs.s = false;
+            if(e.key.toLowerCase() === 'd') inputs.d = false;
+        }
+
+        function onMouseMove(e) {
+            // Camera rotation tracking handling logic 
+            if(gameState === 'PLAYING' || gameState === 'LOBBY') {
+                player.rotY -= e.movementX * 0.003;
+                player.mesh.rotation.y = player.rotY;
+            }
+        }
+
+        // Capture Pointer Lock integration for classic first person controls interface
+        document.body.addEventListener('click', () => {
+            if(gameState === 'PLAYING' || gameState === 'LOBBY') {
+                document.body.requestPointerLock();
+            }
+        });
+
+        function onPlayerShoot(e) {
+            if(gameState !== 'PLAYING') return;
+
+            // Generate visual projectile bullet tracer line particle trail elements
+            const tracerGeo = new THREE.SphereGeometry(0.1, 4, 4);
+            const tracerMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+            const tracer = new THREE.Mesh(tracerGeo, tracerMat);
+            
+            // Set starting point tracking orientation vector calculations
+            tracer.position.copy(player.mesh.position);
+            tracer.position.y += 0.5; // Fire from chest height profile
+            
+            // Setup direction vector from character direction angle
+            const dirX = -Math.sin(player.rotY);
+            const dirZ = -Math.cos(player.rotY);
+            
+            particles.push({
+                mesh: tracer,
+                dx: dirX * 1.2,
+                dz: dirZ * 1.2,
+                life: 30
+            });
+            scene.add(tracer);
+
+            // Process simulated raycasting hitscan check against valid active entities
+            entities.forEach(ent => {
+                if(ent.hp <= 0) return;
+
+                // Simple mathematical distance vector bounding calculations
+                const distToRay = Math.sqrt(Math.pow(ent.mesh.position.x - player.mesh.position.x, 2) + Math.pow(ent.mesh.position.z - player.mesh.position.z, 2));
+                
+                // Vector dot checking if entity falls in line with visual reticle trajectory coordinates
+                const toEntityX = ent.mesh.position.x - player.mesh.position.x;
+                const toEntityZ = ent.mesh.position.z - player.mesh.position.z;
+                const length = Math.sqrt(toEntityX*toEntityX + toEntityZ*toEntityZ);
+                const normX = toEntityX / length;
+                const normZ = toEntityZ / length;
+
+                const dotProduct = (normX * dirX) + (normZ * dirZ);
+
+                if(dotProduct > 0.98 && length < 45) { // Hit registered within cone and range spectrum parameters
+                    if(ent.isFriend) {
+                        // FRIENDLY FIRE RULE CHECK PROTECTION VERIFICATION
+                        console.log(`⚠️ Blocked damage against squadmate: ${ent.name}`);
+                    } else {
+                        const currentLd = LOADOUTS[selectedLoadoutIndex];
+                        ent.hp -= currentLd.damage;
+                        // Color feedback shift on hit profile target indicators
+                        ent.mesh.material.color.setHex(0xffffff);
+                        setTimeout(() => { if(ent.mesh) ent.mesh.material.color.setHex(0xef4444); }, 80);
+
+                        if(ent.hp <= 0) {
+                            scene.remove(ent.mesh);
+                            createEliminationExplosion(ent.mesh.position.x, ent.mesh.position.z);
+                        }
+                    }
+                }
+            });
+
+            checkMatchConditions();
+        }
+
+        function createEliminationExplosion(x, z) {
+            for(let i=0; i<8; i++){
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.2), new THREE.MeshBasicMaterial({color:0xffa500}));
+                p.position.set(x, 1, z);
+                particles.push({
+                    mesh: p,
+                    dx: (Math.random()-0.5)*0.3,
+                    dz: (Math.random()-0.5)*0.3,
+                    life: 15
+                });
+                scene.add(p);
+            }
+        }
+
+        function updateHUD() {
+            const aliveCount = entities.filter(e => !e.isFriend && e.hp > 0).length + 1; // Includes player profile count
+            document.getElementById('hud-alive-count').innerText = aliveCount;
+            document.getElementById('hud-hp-text').innerText = `${player.hp}/100`;
+            document.getElementById('hud-hp-bar').style.width = `${player.hp}%`;
+            document.getElementById('hud-weapon-name').innerText = LOADOUTS[selectedLoadoutIndex].weapon;
+        }
+
+        function checkMatchConditions() {
+            const activeEnemies = entities.filter(e => !e.isFriend && e.hp > 0).length;
+            updateHUD();
+
+            if(activeEnemies <= 0 && gameState === 'PLAYING') {
+                endGameMatch(true);
+            }
+        }
+
+        function endGameMatch(isWin) {
+            gameState = 'END';
+            document.exitPointerLock();
+            hudIngame.classList.add('hidden');
+            screenMatchEnd.classList.remove('hidden');
+            
+            const title = document.getElementById('match-end-title');
+            const sub = document.getElementById('match-end-sub');
+            
+            if(isWin) {
+                title.innerText = "YOU WIN!";
+                title.className = "text-6xl font-black text-amber-500 mb-4 tracking-wider drop-shadow-lg";
+                sub.innerText = "Victory Royale! You are the last survivor standing in the simulation matrix arena.";
+            } else {
+                title.innerText = "ELIMINATED";
+                title.className = "text-6xl font-black text-red-500 mb-4 tracking-wider drop-shadow-lg";
+                sub.innerText = "Better luck next drop loop round cycle.";
+            }
+        }
+
+        // --- SYSTEM REPLAY AND RETURN LINKS INTERFACES ---
+        document.getElementById('btn-end-home').onclick = () => {
+            screenMatchEnd.classList.add('hidden');
+            switchTab('home');
+        };
+        document.getElementById('btn-end-replay').onclick = () => {
+            screenMatchEnd.classList.add('hidden');
+            startLobbySequence(gameModeSelection);
+        };
+
+        // --- REALTIME ANIMATION RUNTIME LOOP ROUTINES ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState === 'LOBBY' || gameState === 'PLAYING') {
+                // Perform movement tracking matrices evaluations
+                let moveX = 0;
+                let moveZ = 0;
+
+                const speed = LOADOUTS[selectedLoadoutIndex].speed;
+
+                if (inputs.w) { moveX -= Math.sin(player.rotY) * speed; moveZ -= Math.cos(player.rotY) * speed; }
+                if (inputs.s) { moveX += Math.sin(player.rotY) * speed; moveZ += Math.cos(player.rotY) * speed; }
+                if (inputs.a) { moveX -= Math.cos(player.rotY) * speed; moveZ += Math.sin(player.rotY) * speed; }
+                if (inputs.d) { moveX += Math.cos(player.rotY) * speed; moveZ -= Math.sin(player.rotY) * speed; }
+
+                player.mesh.position.x += moveX;
+                player.mesh.position.z += moveZ;
+
+                // Bind camera position track dynamically relative behind character framework structure
+                camera.position.x = player.mesh.position.x + Math.sin(player.rotY) * 4;
+                camera.position.z = player.mesh.position.z + Math.cos(player.rotY) * 4;
+                camera.position.y = player.mesh.position.y + 2.2;
+                camera.lookAt(player.mesh.position.x - Math.sin(player.rotY) * 10, player.mesh.position.y + 0.5, player.mesh.position.z - Math.cos(player.rotY) * 10);
+            }
+
+            if (gameState === 'PLAYING') {
+                // Update simulated bot actions behaviors processing routines
+                entities.forEach(ent => {
+                    if (ent.hp <= 0) return;
+
+                    // Random pacing movement offsets definitions
+                    ent.mesh.position.x += ent.vx;
+                    ent.mesh.position.z += ent.vz;
+
+                    // Soft map boundary tracking loopbacks checks
+                    if (Math.abs(ent.mesh.position.x) > 140) ent.vx *= -1;
+                    if (Math.abs(ent.mesh.position.z) > 140) ent.vz *= -1;
+
+                    // Periodic tracking processing targeting closest players vectors calculations
+                    if(!ent.isFriend && Math.random() < 0.005) { 
+                        const distanceToPlayer = ent.mesh.position.distanceTo(player.mesh.position);
+                        if(distanceToPlayer < 30) {
+                            // Inflict minimal ambient procedural damage components
+                            player.hp -= 4;
+                            updateHUD();
+                            if(player.hp <= 0) {
+                                endGameMatch(false);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Animate flying bullet tracer particle units
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.mesh.position.x += p.dx;
+                p.mesh.position.z += p.dz;
+                p.life--;
+                if(p.life <= 0) {
+                    scene.remove(p.mesh);
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Main static viewport frame tracking routine fallback checks
+            if(gameState === 'MENU' && player.mesh) {
+                // Spin player preview display element softly in interface viewport center coordinates
+                player.mesh.rotation.y += 0.01;
+                camera.position.set(player.mesh.position.x, player.mesh.position.y + 1.5, player.mesh.position.z + 4);
+                camera.lookAt(player.mesh.position);
+            }
+
+            if(renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+    </script>
 </body>
 </html>
