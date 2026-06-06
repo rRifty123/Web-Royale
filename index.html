@@ -7,9 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background-color: #0b0f19; color: #fff; width: 100vw; height: 100vh; }
-        /* CRITICAL FIX: Ensure the 3D canvas is absolute and positioned behind UI overlays */
-        canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; z-index: 0; }
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background-color: #0b0f19; color: #fff; }
+        canvas { display: block; width: 100vw; height: 100vh; }
         .hidden { display: none !important; }
         #crosshair {
             position: absolute; top: 50%; left: 50%;
@@ -52,7 +51,7 @@
             <nav class="flex space-x-2 md:space-x-4">
                 <button id="nav-home" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm">Home</button>
                 <button id="nav-loadout" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Loadout</button>
-                <button id="nav-map" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Map</button>
+                <button id="nav-party" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Party</button>
                 <button id="nav-settings" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Settings</button>
             </nav>
             <div class="w-12"></div>
@@ -77,16 +76,14 @@
                 <div id="loadout-list" class="grid grid-cols-1 gap-3"></div>
             </div>
 
-            <div id="page-map" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-6 w-full max-w-xl pointer-events-auto shadow-2xl text-center">
-                <h2 class="text-2xl font-black mb-4 text-indigo-400">TACTICAL OVERVIEW MAP</h2>
-                <div class="w-full aspect-square bg-emerald-950/60 rounded-xl border border-emerald-500/30 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                    <div class="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-                    <div class="w-24 h-24 rounded-full border-2 border-indigo-500 bg-indigo-500/10 absolute top-12 left-12 flex items-center justify-center"><span class="text-[10px] font-bold text-indigo-300">CITY ZONE</span></div>
-                    <div class="w-32 h-20 rounded-xl border border-amber-500/40 bg-amber-500/5 absolute bottom-16 right-12 flex items-center justify-center"><span class="text-[10px] font-bold text-amber-300">THE FARM</span></div>
-                    <div class="w-20 h-20 rounded-full bg-blue-500/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-blue-400 flex items-center justify-center"><span class="text-[10px] font-bold text-blue-300">LAKE</span></div>
-                    <div class="w-full h-full border-4 border-red-500/40 rounded-xl animate-pulse absolute inset-0 pointer-events-none"></div>
-                    <span class="text-xs font-mono font-bold text-emerald-400 z-10 bg-slate-950/80 px-3 py-1.5 rounded-full border border-emerald-500/20">GPS SATELLITE FEED ONLINE</span>
+            <div id="page-party" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-md pointer-events-auto shadow-2xl">
+                <h2 class="text-2xl font-black mb-4 text-indigo-400">PARTY MANAGEMENT</h2>
+                <div class="flex space-x-2 mb-6">
+                    <input type="text" id="party-invite-input" class="flex-1 p-2 rounded bg-slate-800 border border-slate-700 text-white text-sm" placeholder="Enter friend's username...">
+                    <button id="btn-invite-friend" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded font-bold text-sm">Invite</button>
                 </div>
+                <h3 class="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">Current Squad</h3>
+                <div id="party-members-list" class="space-y-2"></div>
             </div>
 
             <div id="page-settings" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-md pointer-events-auto shadow-2xl">
@@ -206,6 +203,7 @@
         let currentUser = null;
         let activeTab = 'home';
         let selectedLoadoutIndex = 0;
+        let myParty = { leader: null, members: [] };
         let cameraZoomDistance = 7;
 
         let scene, camera, renderer;
@@ -224,7 +222,6 @@
         let inputs = { w: false, a: false, s: false, d: false };
         let entities = [];
         let particles = [];
-        let cloudMeshes = [];
         let totalOpponents = 50;
         let gameModeSelection = 'bots';
         let matchCountdown = 5;
@@ -253,11 +250,11 @@
         
         const navHome = document.getElementById('nav-home');
         const navLoadout = document.getElementById('nav-loadout');
-        const navMap = document.getElementById('nav-map');
+        const navParty = document.getElementById('nav-party');
         const navSettings = document.getElementById('nav-settings');
         const pageHome = document.getElementById('page-home');
         const pageLoadout = document.getElementById('page-loadout');
-        const pageMap = document.getElementById('page-map');
+        const pageParty = document.getElementById('page-party');
         const pageSettings = document.getElementById('page-settings');
         
         const popupMatchmaking = document.getElementById('popup-matchmaking');
@@ -273,13 +270,16 @@
 
             if(!rawUsername || password.length < 6) return alert("Please enter a username and a password (min 6 characters).");
             
+            // CRITICAL FIX: Always force username clean string to lowercase so Firebase parsing matches perfectly on lookups
             let cleanUserKey = rawUsername.toLowerCase();
             let safeEmail = `${cleanUserKey}@webroyale.io`;
 
             try {
+                // Step A: Attempt clean account creation
                 const cred = await createUserWithEmailAndPassword(auth, safeEmail, password);
                 await set(ref(db, 'users/' + cred.user.uid), { username: rawUsername, created: Date.now() });
             } catch (error) {
+                // Step B: Catch existing entries and execute a smooth direct login fallback sequence
                 if (error.code === 'auth/email-already-in-use') {
                     try {
                         await signInWithEmailAndPassword(auth, safeEmail, password);
@@ -294,6 +294,7 @@
 
         const logOutAction = () => {
             signOut(auth).then(() => {
+                // Clean input fields to reset states fully on formal window signouts
                 inputUsername.value = '';
                 inputPassword.value = '';
             });
@@ -308,6 +309,7 @@
                     const name = data ? data.username : user.email.split('@')[0];
                     txtUserDisplay.innerText = name.toUpperCase();
                     document.getElementById('settings-username-input').value = name;
+                    setupPartyListeners(name);
                 }, { onlyOnce: true });
                 uiAuthScreen.classList.add('hidden');
                 uiGameInterface.classList.remove('hidden');
@@ -325,6 +327,8 @@
             if(newName && currentUser) {
                 await update(ref(db, 'users/' + currentUser.uid), { username: newName });
                 txtUserDisplay.innerText = newName.toUpperCase();
+                myParty.leader = newName;
+                updatePartyUI();
                 alert("Profile username updated successfully.");
             }
         });
@@ -336,17 +340,17 @@
         // --- TAB NAVIGATION SYSTEM ---
         function switchTab(tabName) {
             activeTab = tabName;
-            [pageHome, pageLoadout, pageMap, pageSettings].forEach(p => p.classList.add('hidden'));
-            [navHome, navLoadout, navMap, navSettings].forEach(n => n.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-sm');
+            [pageHome, pageLoadout, pageParty, pageSettings].forEach(p => p.classList.add('hidden'));
+            [navHome, navLoadout, navParty, navSettings].forEach(n => n.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-sm');
             
             if(tabName === 'home') { pageHome.classList.remove('hidden'); navHome.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
             if(tabName === 'loadout') { pageLoadout.classList.remove('hidden'); navLoadout.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; renderLoadouts(); }
-            if(tabName === 'map') { pageMap.classList.remove('hidden'); navMap.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
+            if(tabName === 'party') { pageParty.classList.remove('hidden'); navParty.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
             if(tabName === 'settings') { pageSettings.classList.remove('hidden'); navSettings.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
         }
         navHome.addEventListener('click', () => switchTab('home'));
         navLoadout.addEventListener('click', () => switchTab('loadout'));
-        navMap.addEventListener('click', () => switchTab('map'));
+        navParty.addEventListener('click', () => switchTab('party'));
         navSettings.addEventListener('click', () => switchTab('settings'));
 
         function renderLoadouts() {
@@ -365,6 +369,21 @@
                 };
                 container.appendChild(item);
             });
+        }
+
+        function setupPartyListeners(username) {
+            myParty.leader = username;
+            document.getElementById('btn-invite-friend').onclick = () => {
+                const input = document.getElementById('party-invite-input');
+                if(input.value.trim()) { myParty.members.push(input.value.trim()); input.value = ''; updatePartyUI(); }
+            };
+            updatePartyUI();
+        }
+
+        function updatePartyUI() {
+            const container = document.getElementById('party-members-list');
+            container.innerHTML = `<div class="p-2 rounded bg-indigo-950/40 text-sm">👑 ${myParty.leader}</div>`;
+            myParty.members.forEach(m => { container.innerHTML += `<div class="p-2 rounded bg-slate-800 text-sm">👤 ${m}</div>`; });
         }
 
         // --- PAUSE MENU ACTIONS ---
@@ -447,8 +466,8 @@
         // --- ROBLOX R6 AVATAR GENERATION PROCEDURES ---
         function createR6Avatar(skinColor, loadout) {
             const group = new THREE.Group();
-            const bodyMat = new THREE.MeshLambertMaterial({ color: skinColor });
-            const faceMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const bodyMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.7 });
+            const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
 
             const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), bodyMat); torso.position.y = 2; group.add(torso);
             const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), faceMat); head.position.y = 3.6; group.add(head);
@@ -466,7 +485,7 @@
         function rebuildR6AvatarWeapon(avatar, loadout) {
             if(!avatar) return;
             if(avatar.userData.weapon) avatar.remove(avatar.userData.weapon);
-            const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength), new THREE.MeshLambertMaterial({ color: loadout.wColor }));
+            const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength), new THREE.MeshStandardMaterial({ color: loadout.wColor, metalness: 0.5 }));
             weaponMesh.position.set(1.5, 2, -loadout.wLength/2);
             avatar.add(weaponMesh);
             avatar.userData.weapon = weaponMesh;
@@ -476,39 +495,16 @@
         function init3DEngine() {
             if(scene) return;
             scene = new THREE.Scene();
-            scene.background = new THREE.Color('#aec6cf');
-            scene.fog = new THREE.FogExp2('#aec6cf', 0.0015); 
+            scene.background = new THREE.Color(0x0f172a);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.006); 
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            
-            // Append renderer directly to layout body container
             document.body.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-            scene.add(ambientLight);
-            
-            const sunLight = new THREE.DirectionalLight(0xffffff, 0.75);
-            sunLight.position.set(150, 400, 100);
-            scene.add(sunLight);
-
-            // Procedural Cloud formations
-            const cloudGeo = new THREE.SphereGeometry(12, 7, 7);
-            const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
-            for(let i=0; i<35; i++) {
-                const cloudGroup = new THREE.Group();
-                const blobs = Math.floor(Math.random() * 3) + 2;
-                for(let b=0; b<blobs; b++) {
-                    const blob = new THREE.Mesh(cloudGeo, cloudMat);
-                    blob.position.set(b * 10, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
-                    blob.scale.set(1, Math.random() * 0.4 + 0.6, Math.random() * 0.4 + 0.6);
-                    cloudGroup.add(blob);
-                }
-                cloudGroup.position.set((Math.random() - 0.5) * 1200, Math.random() * 60 + 120, (Math.random() - 0.5) * 1200);
-                scene.add(cloudGroup);
-                cloudMeshes.push(cloudGroup);
-            }
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(100, 300, 100); scene.add(sun);
 
             player.avatar = createR6Avatar(0x4f46e5, LOADOUTS[selectedLoadoutIndex]);
             player.avatar.position.set(320, 0, 320); 
@@ -529,17 +525,17 @@
             if(groundGrid) return;
 
             // 1. MASSIVE TERRAIN GROUND MAP RADIAL STRUCTURE BASE
-            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshLambertMaterial({ color: 0x14532d })); 
+            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 })); 
             groundGrid.rotateX(-Math.PI / 2);
             scene.add(groundGrid);
 
             // 2. ISOLATED LOBBY PLATFORM
-            isolationGrid = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+            isolationGrid = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshStandardMaterial({ color: 0x334155 }));
             isolationGrid.position.set(320, -0.5, 320);
             scene.add(isolationGrid);
 
             // 3. THE LAKE 
-            const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshLambertMaterial({ color: 0x2563eb }));
+            const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.2 }));
             lakeMesh.position.set(0, 0.1, 0);
             scene.add(lakeMesh);
 
@@ -547,7 +543,7 @@
             for(let x=0; x<4; x++){
                 for(let z=0; z<4; z++){
                     const h = Math.random()*35 + 15;
-                    const skyscraper = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), new THREE.MeshLambertMaterial({ color: 0x475569 }));
+                    const skyscraper = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 }));
                     skyscraper.position.set(100 + (x*18), h/2, -100 - (z*18));
                     scene.add(skyscraper);
                 }
@@ -556,8 +552,8 @@
             // 5. THE TOWN
             for(let i=0; i<15; i++) {
                 const houseGroup = new THREE.Group();
-                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshLambertMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
-                const roof = new THREE.Mesh(new THREE.ConeGeometry(5, 3, 4), new THREE.MeshLambertMaterial({ color: 0xea580c })); roof.position.y = 5; roof.rotateY(Math.PI/4); houseGroup.add(roof);
+                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshStandardMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(5, 3, 4), new THREE.MeshStandardMaterial({ color: 0xea580c })); roof.position.y = 5; roof.rotateY(Math.PI/4); houseGroup.add(roof);
                 houseGroup.position.set(-120 + (Math.random()*60), 0, -120 + (Math.random()*60));
                 scene.add(houseGroup);
             }
@@ -565,22 +561,22 @@
             // 6. THE FOREST
             for(let i=0; i<80; i++) {
                 const treeGroup = new THREE.Group();
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshLambertMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
-                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 5), new THREE.MeshLambertMaterial({ color: 0x065f46 })); leaves.position.y = 5; treeGroup.add(leaves);
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshStandardMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 5), new THREE.MeshStandardMaterial({ color: 0x065f46 })); leaves.position.y = 5; treeGroup.add(leaves);
                 treeGroup.position.set(-150 + (Math.random()*60), 0, -20 + (Math.random()*70));
                 scene.add(treeGroup);
             }
 
             // 7. THE FARM
             const fieldGeo = new THREE.PlaneGeometry(70, 70);
-            const fieldMat = new THREE.MeshLambertMaterial({ color: 0x451a03 }); 
+            const fieldMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 1.0 }); 
             const cropField = new THREE.Mesh(fieldGeo, fieldMat); cropField.rotateX(-Math.PI/2); cropField.position.set(130, 0.1, 40); scene.add(cropField);
             
-            const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshLambertMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
-            const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshLambertMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
+            const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
+            const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshStandardMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
 
             // 8. THE STREETS
-            const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshLambertMaterial({ color: 0x1e293b }));
+            const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }));
             asphaltRoad.rotateX(-Math.PI/2); asphaltRoad.position.set(0, 0.1, 140);
             scene.add(asphaltRoad);
 
@@ -593,12 +589,21 @@
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
 
+            // Squad members
+            myParty.members.forEach((name) => {
+                const avatar = createR6Avatar(0x38bdf8, LOADOUTS[0]);
+                avatar.position.set(Math.random()*12-6, 0, 45 + Math.random()*12);
+                scene.add(avatar);
+                entities.push({ avatar, isFriend: true, name, hp: 100, vx: 0, vz: 0, lastShotTime: 0 });
+            });
+
+            // Enemy bots map assignment dispersals
             for(let i=0; i<totalOpponents; i++) {
                 const randLd = LOADOUTS[Math.floor(Math.random() * LOADOUTS.length)];
                 const avatar = createR6Avatar(0xb91c1c, randLd);
                 
                 let ang = Math.random() * Math.PI * 2;
-                let rad = 120 + Math.random() * 250; 
+                let rad = 50 + Math.random() * 240; 
                 avatar.position.set(Math.cos(ang)*rad, 0, Math.sin(ang)*rad);
                 scene.add(avatar);
 
@@ -629,6 +634,10 @@
             if(gameState === 'MENU' || gameState === 'PAUSED') return;
             if(e.key.toLowerCase() === 'w') inputs.w = true; if(e.key.toLowerCase() === 'a') inputs.a = true;
             if(e.key.toLowerCase() === 's') inputs.s = true; if(e.key.toLowerCase() === 'd') inputs.d = true;
+        }
+        function onKeyUp(e) {
+            if(e.key.toLowerCase() === 'w') inputs.w = false; if(e.key.toLowerCase() === 'a') inputs.a = false;
+            if(e.key.toLowerCase() === 's') inputs.s = false; if(e.key.toLowerCase() === 'd') inputs.d = false;
         }
         function onMouseMove(e) { if(gameState === 'PLAYING' || gameState === 'LOBBY') { player.rotY -= e.movementX * 0.003; player.avatar.rotation.y = player.rotY; } }
         document.body.addEventListener('click', () => { if((gameState === 'PLAYING' || gameState === 'LOBBY') && gameState !== 'PAUSED') document.body.requestPointerLock(); });
@@ -692,11 +701,6 @@
         function animate() {
             requestAnimationFrame(animate);
             animationTime += 0.02;
-
-            cloudMeshes.forEach(cloud => {
-                cloud.position.x += 0.04;
-                if(cloud.position.x > 600) cloud.position.x = -600;
-            });
 
             if(gameState === 'PLAYING' || gameState === 'LOBBY') {
                 let mX = 0, mZ = 0; player.isMoving = false;
