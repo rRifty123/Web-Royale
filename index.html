@@ -30,17 +30,12 @@
                     <input type="text" id="auth-username" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="Player123">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold mb-1">Email (Optional)</label>
-                    <input type="email" id="auth-email" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="you@example.com">
-                </div>
-                <div>
                     <label class="block text-sm font-semibold mb-1">Password *</label>
                     <input type="password" id="auth-password" class="w-full p-2 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-indigo-500 text-white" placeholder="••••••••">
                 </div>
-                <button id="auth-primary-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded font-bold transition mt-4">Sign Up</button>
+                <button id="auth-primary-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded font-bold transition mt-4">Sign Up / Log In</button>
                 <p class="text-center text-sm text-slate-400 mt-2">
-                    <span id="auth-toggle-text">Already have an account?</span> 
-                    <a href="#" id="auth-toggle-link" class="text-indigo-400 underline ml-1">Log In</a>
+                    <span id="auth-toggle-text">Accounts automatically load or create on press.</span>
                 </p>
             </div>
         </div>
@@ -189,7 +184,6 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // CONNECTED PROPERLY WITH YOUR SPECIFIC FIREBASE PROJECT CONFIG + DATABASE URL
         const firebaseConfig = {
             apiKey: "AIzaSyBjLc2OSSYJBQQ3-Eb_2Q_bU9sjhU5bS1c",
             authDomain: "web-royale-1ea63.firebaseapp.com",
@@ -207,7 +201,6 @@
 
         // --- GLOBAL SYSTEM STATE ---
         let currentUser = null;
-        let isLoginMode = false;
         let activeTab = 'home';
         let selectedLoadoutIndex = 0;
         let myParty = { leader: null, members: [] };
@@ -234,7 +227,7 @@
         let matchCountdown = 5;
         let animationTime = 0;
 
-        let stormCircleMesh;
+        let groundGrid, isolationGrid, stormCircleMesh;
         let stormRadius = 380; 
         const minStormRadius = 2;
 
@@ -250,11 +243,8 @@
         const uiAuthScreen = document.getElementById('auth-screen');
         const uiGameInterface = document.getElementById('game-interface');
         const uiNavigationHeader = document.getElementById('main-navigation-header');
-        const uiAuthTitle = document.getElementById('auth-title');
         const uiAuthPrimaryBtn = document.getElementById('auth-primary-btn');
-        const uiAuthToggleLink = document.getElementById('auth-toggle-link');
         const inputUsername = document.getElementById('auth-username');
-        const inputEmail = document.getElementById('auth-email');
         const inputPassword = document.getElementById('auth-password');
         const txtUserDisplay = document.getElementById('user-display');
         
@@ -273,32 +263,35 @@
         const uiPauseMenu = document.getElementById('ingame-pause-menu');
         const screenMatchEnd = document.getElementById('match-end-screen');
 
-        // --- AUTH FLOW ---
-        uiAuthToggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            isLoginMode = !isLoginMode;
-            uiAuthTitle.innerText = isLoginMode ? "LOG IN TO PROFILE" : "CREATE ACCOUNT";
-            uiAuthPrimaryBtn.innerText = isLoginMode ? "Log In" : "Sign Up";
-        });
-
+        // --- SMART AUTH FLOW ---
         uiAuthPrimaryBtn.addEventListener('click', async () => {
-            const username = inputUsername.value.trim();
-            let email = inputEmail.value.trim() || `${username.toLowerCase()}@webroyale.internal`;
+            const username = inputUsername.value.trim().toLowerCase();
             const password = inputPassword.value.trim();
 
-            if(!username || !password) return alert("Please fill in required fields.");
+            if(!username || password.length < 6) return alert("Please enter a username and a password (min 6 characters).");
+            
+            // Generate a reliable valid email schema using the clean username structural key string format
+            let safeEmail = `${username}@webroyale.io`;
+
             try {
-                if (isLoginMode) {
-                    await signInWithEmailAndPassword(auth, email, password);
+                // Step A: Attempt clean account creation profile register signature
+                const cred = await createUserWithEmailAndPassword(auth, safeEmail, password);
+                await set(ref(db, 'users/' + cred.user.uid), { username: inputUsername.value.trim(), created: Date.now() });
+            } catch (error) {
+                // Step B: Catch existing email markers and immediately execute a smooth automated login transition loop instead
+                if (error.code === 'auth/email-already-in-use') {
+                    try {
+                        await signInWithEmailAndPassword(auth, safeEmail, password);
+                    } catch (loginError) {
+                        alert("Incorrect password for this username profile registry.");
+                    }
                 } else {
-                    const cred = await createUserWithEmailAndPassword(auth, email, password);
-                    await set(ref(db, 'users/' + cred.user.uid), { username: username, created: Date.now() });
+                    alert(error.message);
                 }
-            } catch (error) { alert(error.message); }
+            }
         });
 
         const logOutAction = () => signOut(auth);
-        document.getElementById('btn-logout').addEventListener('click', logOutAction);
         document.getElementById('btn-settings-logout').addEventListener('click', logOutAction);
 
         onAuthStateChanged(auth, (user) => {
@@ -493,6 +486,7 @@
 
         // --- ENVIRONMENT GENERATION ---
         function init3DEngine() {
+            if(scene) return;
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
             scene.fog = new THREE.FogExp2(0x0f172a, 0.006); 
@@ -518,7 +512,7 @@
             animate();
         }
 
-        function stop3DEngine() { gameState = 'MENU'; if(renderer) { renderer.domElement.remove(); renderer.dispose(); } }
+        function stop3DEngine() { gameState = 'MENU'; }
 
         function buildMatchEnvironment() {
             if(groundGrid) return;
