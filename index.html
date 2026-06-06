@@ -446,8 +446,8 @@
         // --- ROBLOX R6 AVATAR GENERATION PROCEDURES ---
         function createR6Avatar(skinColor, loadout) {
             const group = new THREE.Group();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.7 });
-            const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+            const bodyMat = new THREE.MeshLambertMaterial({ color: skinColor });
+            const faceMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
             const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), bodyMat); torso.position.y = 2; group.add(torso);
             const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), faceMat); head.position.y = 3.6; group.add(head);
@@ -465,7 +465,7 @@
         function rebuildR6AvatarWeapon(avatar, loadout) {
             if(!avatar) return;
             if(avatar.userData.weapon) avatar.remove(avatar.userData.weapon);
-            const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength), new THREE.MeshStandardMaterial({ color: loadout.wColor, metalness: 0.5 }));
+            const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength), new THREE.MeshLambertMaterial({ color: loadout.wColor }));
             weaponMesh.position.set(1.5, 2, -loadout.wLength/2);
             avatar.add(weaponMesh);
             avatar.userData.weapon = weaponMesh;
@@ -475,7 +475,6 @@
         function init3DEngine() {
             if(scene) return;
             scene = new THREE.Scene();
-            // Sky Blue & Diluted Fog setup for expansive visibility
             scene.background = new THREE.Color(0xaec6cf);
             scene.fog = new THREE.FogExp2(0xaec6cf, 0.0015); 
 
@@ -484,13 +483,13 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // UPGRADED BRIGHTNESS FIX: Swapped to a bright HemisphereLight to illuminate objects from all angles
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            // STABLE LIGHTING CONFIGURATION: High ambient intensity combined with strong directional sun coordinates
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambientLight);
             
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
-            hemiLight.position.set(0, 300, 0);
-            scene.add(hemiLight);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.75);
+            sunLight.position.set(150, 400, 100);
+            scene.add(sunLight);
 
             // Procedural Cloud formations
             const cloudGeo = new THREE.SphereGeometry(12, 7, 7);
@@ -528,17 +527,17 @@
             if(groundGrid) return;
 
             // 1. MASSIVE TERRAIN GROUND MAP RADIAL STRUCTURE BASE
-            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 })); 
+            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshLambertMaterial({ color: 0x14532d })); 
             groundGrid.rotateX(-Math.PI / 2);
             scene.add(groundGrid);
 
             // 2. ISOLATED LOBBY PLATFORM
-            isolationGrid = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            isolationGrid = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshLambertMaterial({ color: 0x334155 }));
             isolationGrid.position.set(320, -0.5, 320);
             scene.add(isolationGrid);
 
             // 3. THE LAKE 
-            const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.2 }));
+            const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshLambertMaterial({ color: 0x2563eb }));
             lakeMesh.position.set(0, 0.1, 0);
             scene.add(lakeMesh);
 
@@ -546,7 +545,7 @@
             for(let x=0; x<4; x++){
                 for(let z=0; z<4; z++){
                     const h = Math.random()*35 + 15;
-                    const skyscraper = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 }));
+                    const skyscraper = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), new THREE.MeshLambertMaterial({ color: 0x475569 }));
                     skyscraper.position.set(100 + (x*18), h/2, -100 - (z*18));
                     scene.add(skyscraper);
                 }
@@ -555,8 +554,8 @@
             // 5. THE TOWN
             for(let i=0; i<15; i++) {
                 const houseGroup = new THREE.Group();
-                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshStandardMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
-                const roof = new THREE.Mesh(new THREE.ConeGeometry(5, 3, 4), new THREE.MeshStandardMaterial({ color: 0xea580c })); roof.position.y = 5; roof.rotateY(Math.PI/4); houseGroup.add(roof);
+                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshLambertMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(5, 3, 4), new THREE.MeshLambertMaterial({ color: 0xea580c })); roof.position.y = 5; roof.rotateY(Math.PI/4); houseGroup.add(roof);
                 houseGroup.position.set(-120 + (Math.random()*60), 0, -120 + (Math.random()*60));
                 scene.add(houseGroup);
             }
@@ -564,22 +563,22 @@
             // 6. THE FOREST
             for(let i=0; i<80; i++) {
                 const treeGroup = new THREE.Group();
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshStandardMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
-                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 5), new THREE.MeshStandardMaterial({ color: 0x065f46 })); leaves.position.y = 5; treeGroup.add(leaves);
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshLambertMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 5), new THREE.MeshLambertMaterial({ color: 0x065f46 })); leaves.position.y = 5; treeGroup.add(leaves);
                 treeGroup.position.set(-150 + (Math.random()*60), 0, -20 + (Math.random()*70));
                 scene.add(treeGroup);
             }
 
             // 7. THE FARM
             const fieldGeo = new THREE.PlaneGeometry(70, 70);
-            const fieldMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 1.0 }); 
+            const fieldMat = new THREE.MeshLambertMaterial({ color: 0x451a03 }); 
             const cropField = new THREE.Mesh(fieldGeo, fieldMat); cropField.rotateX(-Math.PI/2); cropField.position.set(130, 0.1, 40); scene.add(cropField);
             
-            const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
-            const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshStandardMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
+            const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshLambertMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
+            const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshLambertMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
 
             // 8. THE STREETS
-            const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }));
+            const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshLambertMaterial({ color: 0x1e293b }));
             asphaltRoad.rotateX(-Math.PI/2); asphaltRoad.position.set(0, 0.1, 140);
             scene.add(asphaltRoad);
 
@@ -592,7 +591,6 @@
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
 
-            // Enemy bots map assignment dispersals - Dispersed far apart
             for(let i=0; i<totalOpponents; i++) {
                 const randLd = LOADOUTS[Math.floor(Math.random() * LOADOUTS.length)];
                 const avatar = createR6Avatar(0xb91c1c, randLd);
@@ -693,7 +691,6 @@
             requestAnimationFrame(animate);
             animationTime += 0.02;
 
-            // Slow cloud drift tracking logic
             cloudMeshes.forEach(cloud => {
                 cloud.position.x += 0.04;
                 if(cloud.position.x > 600) cloud.position.x = -600;
