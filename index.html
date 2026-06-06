@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Web Royale - R6 Edition</title>
-    <!-- Tailwind CSS for rapid UI styling -->
+    <title>3D Web Royale - Custom Map Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Three.js for 3D Graphics -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background-color: #0b0f19; color: #fff; }
@@ -23,7 +21,6 @@
 </head>
 <body>
 
-    <!-- 1. AUTHENTICATION SCREEN -->
     <div id="auth-screen" class="flex flex-col items-center justify-center h-screen w-screen absolute inset-0 z-50 bg-slate-900">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
             <h2 id="auth-title" class="text-3xl font-extrabold text-center mb-6 text-indigo-400">WEB ROYALE</h2>
@@ -49,29 +46,25 @@
         </div>
     </div>
 
-    <!-- 2. MAIN GAME INTERFACE -->
     <div id="game-interface" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between h-screen w-screen">
         
-        <!-- TOP NAVIGATION BAR -->
         <header id="main-navigation-header" class="w-full bg-slate-900/90 border-b border-slate-800 p-4 flex justify-between items-center pointer-events-auto">
             <div class="flex items-center space-x-2">
                 <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
                 <span id="user-display" class="font-bold text-slate-200">Loading...</span>
             </div>
-            <nav class="flex space-x-4">
-                <button id="nav-home" class="px-4 py-2 rounded font-bold bg-indigo-600 text-white transition">Home</button>
-                <button id="nav-loadout" class="px-4 py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Loadout</button>
-                <button id="nav-party" class="px-4 py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Party</button>
+            <nav class="flex space-x-2 md:space-x-4">
+                <button id="nav-home" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm">Home</button>
+                <button id="nav-loadout" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Loadout</button>
+                <button id="nav-party" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Party</button>
+                <button id="nav-settings" class="px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-sm">Settings</button>
             </nav>
-            <button id="btn-logout" class="text-sm text-slate-400 hover:text-red-400">Logout</button>
-        </header>
+            <div class="w-12"></div> </header>
 
-        <!-- MAIN VIEWPORT CONTENT AREA -->
         <main class="flex-1 flex items-center justify-center relative">
             
-            <!-- HOME PAGE -->
             <div id="page-home" class="absolute inset-0 flex flex-col justify-between p-12 items-end pointer-events-none">
-                <div class="w-full flex justify-between items-end mt-auto pointer-events-auto">
+                <div id="home-interactive-elements" class="w-full flex justify-between items-end mt-auto pointer-events-auto">
                     <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Selected Loadout</h3>
                         <p id="home-loadout-display" class="text-xl font-black text-indigo-400">Assault Ranger</p>
@@ -82,13 +75,11 @@
                 </div>
             </div>
 
-            <!-- LOADOUT PAGE -->
             <div id="page-loadout" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-2xl pointer-events-auto shadow-2xl">
                 <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2 text-indigo-400">CHOOSE YOUR LOADOUT</h2>
                 <div id="loadout-list" class="grid grid-cols-1 gap-3"></div>
             </div>
 
-            <!-- PARTY PAGE -->
             <div id="page-party" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-md pointer-events-auto shadow-2xl">
                 <h2 class="text-2xl font-black mb-4 text-indigo-400">PARTY MANAGEMENT</h2>
                 <div class="flex space-x-2 mb-6">
@@ -99,7 +90,27 @@
                 <div id="party-members-list" class="space-y-2"></div>
             </div>
 
-            <!-- MATCHMAKING POPUP -->
+            <div id="page-settings" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-8 w-full max-w-md pointer-events-auto shadow-2xl">
+                <h2 class="text-2xl font-black mb-4 text-indigo-400">SETTINGS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Edit Account Username</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="settings-username-input" class="flex-1 p-2 rounded bg-slate-800 border border-slate-700 text-white text-sm">
+                            <button id="btn-save-username" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded font-bold text-sm">Save</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Camera Field View Zoom</label>
+                        <input type="range" id="settings-zoom-slider" min="4" max="15" step="0.5" value="7" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-slate-500 mt-1"><span>Close</span><span>Far</span></div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-800">
+                        <button id="btn-settings-logout" class="w-full bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/30 text-rose-400 py-2 rounded font-bold transition text-sm">Log Out of Profile</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="popup-matchmaking" class="hidden absolute bg-slate-950/95 border border-slate-700 p-8 rounded-xl text-center max-w-sm pointer-events-auto shadow-2xl">
                 <h3 class="text-2xl font-black mb-2">SELECT GAME MODE</h3>
                 <p class="text-slate-400 text-sm mb-6">Choose your matchmaking bracket.</p>
@@ -116,23 +127,20 @@
                 <button id="close-matchmaking" class="mt-4 text-xs text-slate-500 underline hover:text-slate-300">Cancel</button>
             </div>
 
-            <!-- LOADING / PRE-GAME ISLAND OVERLAY -->
             <div id="loading-island-overlay" class="hidden absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-center">
                 <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 mb-4"></div>
                 <h2 id="lobby-status-text" class="text-2xl font-bold mb-2">Loading Warmup Island...</h2>
                 <p id="lobby-timer" class="text-indigo-400 font-mono text-lg">Waiting for players to connect...</p>
             </div>
 
-            <!-- IN-GAME HUD -->
             <div id="ingame-hud" class="hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-6 w-full h-full">
                 <div class="flex justify-between items-start w-full">
                     <div class="bg-black/50 px-4 py-2 rounded text-sm backdrop-blur-sm border border-white/10">
                         <span class="text-slate-400">ALIVE:</span> <span id="hud-alive-count" class="font-black text-emerald-400 text-lg">--</span>
                     </div>
                     <div class="bg-black/50 px-4 py-2 rounded text-sm backdrop-blur-sm border border-white/10 text-center">
-                        <span class="text-red-400 font-bold">STORM:</span> <span id="hud-storm-radius" class="font-mono text-white font-bold">300m</span>
+                        <span class="text-red-400 font-bold">STORM:</span> <span id="hud-storm-radius" class="font-mono text-white font-bold">500m</span>
                     </div>
-                    <!-- Menu Button for Pause Menu -->
                     <button id="btn-ingame-menu" class="bg-slate-800/80 hover:bg-slate-700 pointer-events-auto p-2 rounded border border-white/10 text-white font-bold text-xl px-4 transition">
                         ≡
                     </button>
@@ -155,7 +163,6 @@
                 </div>
             </div>
 
-            <!-- IN-GAME PAUSE MENU -->
             <div id="ingame-pause-menu" class="hidden absolute inset-0 bg-black/75 flex flex-col items-center justify-center text-center pointer-events-auto z-50">
                 <div class="bg-slate-900 border border-slate-700 p-8 rounded-xl shadow-2xl w-72 space-y-4">
                     <h3 class="text-xl font-black text-slate-200 tracking-wide">MATCH PAUSED</h3>
@@ -164,7 +171,6 @@
                 </div>
             </div>
 
-            <!-- WIN / LOSS SCREEN -->
             <div id="match-end-screen" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-center pointer-events-auto z-50">
                 <h1 id="match-end-title" class="text-6xl font-black text-amber-500 mb-4 tracking-wider drop-shadow-lg">YOU WIN!</h1>
                 <p id="match-end-sub" class="text-slate-400 mb-8 max-w-sm">Simulation terminated.</p>
@@ -177,11 +183,10 @@
         </main>
     </div>
 
-    <!-- 3. GAME RUNTIME & LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjLc2OSSYJBQQ3-Eb_2Q_bU9sjhU5bS1c",
@@ -203,15 +208,16 @@
         let activeTab = 'home';
         let selectedLoadoutIndex = 0;
         let myParty = { leader: null, members: [] };
+        let cameraZoomDistance = 7;
 
         let scene, camera, renderer;
         let gameState = 'MENU'; // MENU, LOBBY, PLAYING, PAUSED, END
         let previousGameState = 'PLAYING';
         
         let player = {
-            avatar: null, // Holds R6 structural group object
+            avatar: null,
             hp: 100,
-            speed: 0.18,
+            speed: 0.28, // Scaled speed for a significantly bigger map environment
             x: 0, z: 0, rotY: 0,
             vx: 0, vz: 0,
             isMoving: false
@@ -225,17 +231,16 @@
         let matchCountdown = 5;
         let animationTime = 0;
 
-        // Battle Royale Storm state variable parameters
         let stormCircleMesh;
-        let stormRadius = 150; 
-        const minStormRadius = 5;
+        let stormRadius = 380; // Larger boundary matching massive ground maps
+        const minStormRadius = 2;
 
         const LOADOUTS = [
-            { name: "Assault Ranger", weapon: "AR-15 Carbine", damage: 25, speed: 0.16, color: 0x4f46e5, wLength: 1.2, wThickness: 0.15, wColor: 0x334155 },
-            { name: "Stealth Operative", weapon: "Silenced SMG", damage: 15, speed: 0.22, color: 0x10b981, wLength: 0.8, wThickness: 0.12, wColor: 0x1e293b },
-            { name: "Heavy Juggernaut", weapon: "LMG Heavy", damage: 35, speed: 0.12, color: 0xf59e0b, wLength: 1.4, wThickness: 0.22, wColor: 0x475569 },
-            { name: "Apex Marksman", weapon: "Sniper Rifle", damage: 65, speed: 0.14, color: 0xef4444, wLength: 1.8, wThickness: 0.14, wColor: 0x7f1d1d },
-            { name: "Skirmish Specialist", weapon: "Tactical Shotgun", damage: 45, speed: 0.18, color: 0xec4899, wLength: 1.0, wThickness: 0.18, wColor: 0x581c87 }
+            { name: "Assault Ranger", weapon: "AR-15 Carbine", damage: 25, color: 0x4f46e5, wLength: 1.2, wThickness: 0.15, wColor: 0x334155 },
+            { name: "Stealth Operative", weapon: "Silenced SMG", damage: 15, color: 0x10b981, wLength: 0.8, wThickness: 0.12, wColor: 0x1e293b },
+            { name: "Heavy Juggernaut", weapon: "LMG Heavy", damage: 35, color: 0xf59e0b, wLength: 1.4, wThickness: 0.22, wColor: 0x475569 },
+            { name: "Apex Marksman", weapon: "Sniper Rifle", damage: 65, color: 0xef4444, wLength: 1.8, wThickness: 0.14, wColor: 0x7f1d1d },
+            { name: "Skirmish Specialist", weapon: "Tactical Shotgun", damage: 45, color: 0xec4899, wLength: 1.0, wThickness: 0.18, wColor: 0x581c87 }
         ];
 
         // --- UI ELEMENTS ---
@@ -253,9 +258,11 @@
         const navHome = document.getElementById('nav-home');
         const navLoadout = document.getElementById('nav-loadout');
         const navParty = document.getElementById('nav-party');
+        const navSettings = document.getElementById('nav-settings');
         const pageHome = document.getElementById('page-home');
         const pageLoadout = document.getElementById('page-loadout');
         const pageParty = document.getElementById('page-party');
+        const pageSettings = document.getElementById('page-settings');
         
         const popupMatchmaking = document.getElementById('popup-matchmaking');
         const overlayLoadingIsland = document.getElementById('loading-island-overlay');
@@ -287,7 +294,9 @@
             } catch (error) { alert(error.message); }
         });
 
-        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+        const logOutAction = () => signOut(auth);
+        document.getElementById('btn-logout').addEventListener('click', logOutAction);
+        document.getElementById('btn-settings-logout').addEventListener('click', logOutAction);
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -296,6 +305,7 @@
                     const data = snapshot.val();
                     const name = data ? data.username : user.email.split('@')[0];
                     txtUserDisplay.innerText = name.toUpperCase();
+                    document.getElementById('settings-username-input').value = name;
                     setupPartyListeners(name);
                 }, { onlyOnce: true });
                 uiAuthScreen.classList.add('hidden');
@@ -308,16 +318,37 @@
             }
         });
 
+        // --- SETTINGS OPERATIONS ---
+        document.getElementById('btn-save-username').addEventListener('click', async () => {
+            const newName = document.getElementById('settings-username-input').value.trim();
+            if(newName && currentUser) {
+                await update(ref(db, 'users/' + currentUser.uid), { username: newName });
+                txtUserDisplay.innerText = newName.toUpperCase();
+                myParty.leader = newName;
+                updatePartyUI();
+                alert("Profile username updated successfully.");
+            }
+        });
+
+        document.getElementById('settings-zoom-slider').addEventListener('input', (e) => {
+            cameraZoomDistance = parseFloat(e.target.value);
+        });
+
+        // --- TAB NAVIGATION SYSTEM ---
         function switchTab(tabName) {
             activeTab = tabName;
-            [pageHome, pageLoadout, pageParty].forEach(p => p.classList.add('hidden'));
-            if(tabName === 'home') pageHome.classList.remove('hidden');
-            if(tabName === 'loadout') { pageLoadout.classList.remove('hidden'); renderLoadouts(); }
-            if(tabName === 'party') pageParty.classList.remove('hidden');
+            [pageHome, pageLoadout, pageParty, pageSettings].forEach(p => p.classList.add('hidden'));
+            [navHome, navLoadout, navParty, navSettings].forEach(n => n.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-sm');
+            
+            if(tabName === 'home') { pageHome.classList.remove('hidden'); navHome.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
+            if(tabName === 'loadout') { pageLoadout.classList.remove('hidden'); navLoadout.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; renderLoadouts(); }
+            if(tabName === 'party') { pageParty.classList.remove('hidden'); navParty.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
+            if(tabName === 'settings') { pageSettings.classList.remove('hidden'); navSettings.className = 'px-3 py-1.5 md:px-4 md:py-2 rounded font-bold bg-indigo-600 text-white transition text-sm'; }
         }
         navHome.addEventListener('click', () => switchTab('home'));
         navLoadout.addEventListener('click', () => switchTab('loadout'));
         navParty.addEventListener('click', () => switchTab('party'));
+        navSettings.addEventListener('click', () => switchTab('settings'));
 
         function renderLoadouts() {
             const container = document.getElementById('loadout-list');
@@ -349,16 +380,13 @@
         function updatePartyUI() {
             const container = document.getElementById('party-members-list');
             container.innerHTML = `<div class="p-2 rounded bg-indigo-950/40 text-sm">👑 ${myParty.leader}</div>`;
-            myParty.members.forEach(m => {
-                container.innerHTML += `<div class="p-2 rounded bg-slate-800 text-sm">👤 ${m}</div>`;
-            });
+            myParty.members.forEach(m => { container.innerHTML += `<div class="p-2 rounded bg-slate-800 text-sm">👤 ${m}</div>`; });
         }
 
         // --- PAUSE MENU ACTIONS ---
         document.getElementById('btn-ingame-menu').addEventListener('click', () => {
             if(gameState === 'PLAYING' || gameState === 'LOBBY') {
-                previousGameState = gameState;
-                gameState = 'PAUSED';
+                previousGameState = gameState; gameState = 'PAUSED';
                 document.exitPointerLock();
                 uiPauseMenu.classList.remove('hidden');
             }
@@ -380,14 +408,12 @@
             document.exitPointerLock();
             hudIngame.classList.add('hidden');
             overlayLoadingIsland.classList.add('hidden');
+            document.getElementById('home-interactive-elements').classList.remove('hidden');
             uiNavigationHeader.classList.remove('hidden');
             
-            // Wipe runtime actors
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
-            if(stormCircleMesh) scene.remove(stormCircleMesh);
-            
-            player.avatar.position.set(120, 0, 120);
+            player.avatar.position.set(320, 0, 320); // Send back to isolated layout preview platform
             switchTab('home');
         }
 
@@ -400,22 +426,23 @@
         function startLobbySequence(mode) {
             gameModeSelection = mode;
             totalOpponents = mode === 'bots' ? 50 : 20;
-            stormRadius = 150;
+            stormRadius = 380;
             popupMatchmaking.classList.add('hidden');
             
-            // Hides the primary navigation menu interface completely
+            // FULLY HIDES HOME/LOBBY INTERFACES PREVENTING CLUTTER OVERLAPS
             uiNavigationHeader.classList.add('hidden');
+            document.getElementById('home-interactive-elements').classList.add('hidden');
             overlayLoadingIsland.classList.remove('hidden');
             
             gameState = 'LOBBY';
             matchCountdown = 5;
             
             buildMatchEnvironment();
-            player.avatar.position.set(120, 0, 120); // Hold on isolation grid
+            player.avatar.position.set(320, 0, 320); 
 
             const interval = setInterval(() => {
                 matchCountdown--;
-                document.getElementById('lobby-timer').innerText = `Teleporting to drop-zone in ${matchCountdown}s...`;
+                document.getElementById('lobby-timer').innerText = `Teleporting to custom combat map in ${matchCountdown}s...`;
                 if(matchCountdown <= 0) {
                     clearInterval(interval);
                     executeDropZoneLaunch();
@@ -428,7 +455,8 @@
             hudIngame.classList.remove('hidden');
             gameState = 'PLAYING';
             
-            player.avatar.position.set(0, 0, 0);
+            // Center spawn area on custom image blueprint layout
+            player.avatar.position.set(0, 0, 40); 
             player.hp = 100;
             
             spawnBattlefieldEntities();
@@ -437,50 +465,18 @@
         // --- ROBLOX R6 AVATAR GENERATION PROCEDURES ---
         function createR6Avatar(skinColor, loadout) {
             const group = new THREE.Group();
-
-            // Materials
             const bodyMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.7 });
             const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
 
-            // Torso (Size: 2 x 2 x 1)
-            const torsoGeo = new THREE.BoxGeometry(2, 2, 1);
-            const torso = new THREE.Mesh(torsoGeo, bodyMat);
-            torso.position.y = 2;
-            group.add(torso);
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), bodyMat); torso.position.y = 2; group.add(torso);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), faceMat); head.position.y = 3.6; group.add(head);
 
-            // Head (Size: 1.25 x 1.25 x 1.25)
-            const headGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-            const head = new THREE.Mesh(headGeo, faceMat);
-            head.position.y = 3.6;
-            group.add(head);
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), bodyMat); leftArm.position.set(-1.5, 2, 0); group.add(leftArm);
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), bodyMat); rightArm.position.set(1.5, 2, 0); group.add(rightArm);
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), bodyMat); leftLeg.position.set(-0.5, 1, 0); group.add(leftLeg);
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), bodyMat); rightLeg.position.set(0.5, 1, 0); group.add(rightLeg);
 
-            // Left Arm (Size: 1 x 2 x 1)
-            const laGeo = new THREE.BoxGeometry(1, 2, 1);
-            const leftArm = new THREE.Mesh(laGeo, bodyMat);
-            leftArm.position.set(-1.5, 2, 0);
-            group.add(leftArm);
-
-            // Right Arm (Size: 1 x 2 x 1)
-            const raGeo = new THREE.BoxGeometry(1, 2, 1);
-            const rightArm = new THREE.Mesh(raGeo, bodyMat);
-            rightArm.position.set(1.5, 2, 0);
-            group.add(rightArm);
-
-            // Left Leg (Size: 1 x 2 x 1)
-            const llGeo = new THREE.BoxGeometry(1, 2, 1);
-            const leftLeg = new THREE.Mesh(llGeo, bodyMat);
-            leftLeg.position.set(-0.5, 1, 0);
-            group.add(leftLeg);
-
-            // Right Leg (Size: 1 x 2 x 1)
-            const rlGeo = new THREE.BoxGeometry(1, 2, 1);
-            const rightLeg = new THREE.Mesh(rlGeo, bodyMat);
-            rightLeg.position.set(0.5, 1, 0);
-            group.add(rightLeg);
-
-            // Arm/Leg structural reference mappings for animation processing routines
             group.userData = { head, torso, leftArm, rightArm, leftLeg, rightLeg, weapon: null };
-
             rebuildR6AvatarWeapon(group, loadout);
             return group;
         }
@@ -488,36 +484,28 @@
         function rebuildR6AvatarWeapon(avatar, loadout) {
             if(!avatar) return;
             if(avatar.userData.weapon) avatar.remove(avatar.userData.weapon);
-
-            const wGeo = new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength);
-            const wMat = new THREE.MeshStandardMaterial({ color: loadout.wColor, metalness: 0.5 });
-            const weaponMesh = new THREE.Mesh(wGeo, wMat);
-
-            // Position rifle pointing forward from the right arm mesh object area
+            const weaponMesh = new THREE.Mesh(new THREE.BoxGeometry(loadout.wThickness, loadout.wThickness, loadout.wLength), new THREE.MeshStandardMaterial({ color: loadout.wColor, metalness: 0.5 }));
             weaponMesh.position.set(1.5, 2, -loadout.wLength/2);
             avatar.add(weaponMesh);
             avatar.userData.weapon = weaponMesh;
         }
 
-        // --- THREE.JS ENGINE CORE SETUP ---
-        let groundGrid, isolationGrid;
+        // --- CUSTOM IMAGE DESIGN ENVIRONMENT GENERATION MAP ---
         function init3DEngine() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
-            scene.fog = new THREE.FogExp2(0x0f172a, 0.012);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.006); // Decreased fog density for larger draw distances
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.7);
-            sun.position.set(50, 150, 50);
-            scene.add(sun);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(100, 300, 100); scene.add(sun);
 
-            // Create structural R6 blocky player
             player.avatar = createR6Avatar(0x4f46e5, LOADOUTS[selectedLoadoutIndex]);
+            player.avatar.position.set(320, 0, 320); // Isolation startup vector position
             scene.add(player.avatar);
 
             window.addEventListener('resize', onWindowResize);
@@ -529,40 +517,70 @@
             animate();
         }
 
-        function stop3DEngine() {
-            gameState = 'MENU';
-            if(renderer) { renderer.domElement.remove(); renderer.dispose(); }
-        }
+        function stop3DEngine() { gameState = 'MENU'; if(renderer) { renderer.domElement.remove(); renderer.dispose(); } }
 
         function buildMatchEnvironment() {
-            if(groundGrid) return; // Build only once
+            if(groundGrid) return;
 
-            // Terrain Surface 
-            const groundGeo = new THREE.PlaneGeometry(400, 400);
-            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
-            groundGrid = new THREE.Mesh(groundGeo, groundMat);
+            // 1. MASSIVE TERRAIN GROUND MAP RADIAL STRUCTURE BASE
+            groundGrid = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.9 })); // Green grass base
             groundGrid.rotateX(-Math.PI / 2);
             scene.add(groundGrid);
 
-            // Lobby Isolation Platform
-            const isoGeo = new THREE.BoxGeometry(40, 1, 40);
-            const isoMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-            isolationGrid = new THREE.Mesh(isoGeo, isoMat);
-            isolationGrid.position.set(120, -0.5, 120);
+            // 2. ISOLATED LOBBY PLATFORM
+            isolationGrid = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            isolationGrid.position.set(320, -0.5, 320);
             scene.add(isolationGrid);
 
-            // Procedural arena environmental layout obstacles
-            for(let i=0; i<60; i++) {
-                const box = new THREE.Mesh(new THREE.BoxGeometry(4, Math.random()*12+4, 4), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-                box.position.set(Math.random()*280-140, box.geometry.parameters.height/2, Math.random()*280-140);
-                scene.add(box);
+            // 3. THE LAKE (CENTER OF DRAWING POOL)
+            const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(40, 40, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.2 }));
+            lakeMesh.position.set(0, 0.1, 0);
+            scene.add(lakeMesh);
+
+            // 4. THE CITY (TOP RIGHT QUADRANT - TALL SKYSCRAPERS GRID)
+            for(let x=0; x<4; x++){
+                for(let z=0; z<4; z++){
+                    const h = Math.random()*35 + 15;
+                    const skyscraper = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 }));
+                    skyscraper.position.set(100 + (x*18), h/2, -100 - (z*18));
+                    scene.add(skyscraper);
+                }
             }
 
-            // The Storm Boundary Ring Visual representation
-            const stormGeo = new THREE.CylinderGeometry(1, 1, 60, 64, 1, true);
-            const stormMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
-            stormCircleMesh = new THREE.Mesh(stormGeo, stormMat);
-            stormCircleMesh.position.y = 25;
+            // 5. THE TOWN (TOP LEFT QUADRANT - RESIDENTIAL HOUSES SUBURBS)
+            for(let i=0; i<15; i++) {
+                const houseGroup = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), new THREE.MeshStandardMaterial({ color: 0xfef08a })); base.position.y = 2; houseGroup.add(base);
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(5, 3, 4), new THREE.MeshStandardMaterial({ color: 0xea580c })); roof.position.y = 5; roof.rotateY(Math.PI/4); houseGroup.add(roof);
+                houseGroup.position.set(-120 + (Math.random()*60), 0, -120 + (Math.random()*60));
+                scene.add(houseGroup);
+            }
+
+            // 6. THE FOREST (MID-LEFT ZONE AREA - PINE BLOCKY TREES NATURE REGION)
+            for(let i=0; i<80; i++) {
+                const treeGroup = new THREE.Group();
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2), new THREE.MeshStandardMaterial({ color: 0x78350f })); trunk.position.y = 1; treeGroup.add(trunk);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 5), new THREE.MeshStandardMaterial({ color: 0x065f46 })); leaves.position.y = 5; treeGroup.add(leaves);
+                treeGroup.position.set(-150 + (Math.random()*60), 0, -20 + (Math.random()*70));
+                scene.add(treeGroup);
+            }
+
+            // 7. THE FARM (MID-RIGHT QUADRANT - TILLED CROPS FIELDS AND BARN HOUSES STRUCTURES)
+            const fieldGeo = new THREE.PlaneGeometry(70, 70);
+            const fieldMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 1.0 }); // Rich brown soil dirt texture map representations
+            const cropField = new THREE.Mesh(fieldGeo, fieldMat); cropField.rotateX(-Math.PI/2); cropField.position.set(130, 0.1, 40); scene.add(cropField);
+            
+            const barn = new THREE.Mesh(new THREE.BoxGeometry(14, 10, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b })); barn.position.set(130, 5, 90); scene.add(barn);
+            const barnRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 4, 21), new THREE.MeshStandardMaterial({ color: 0x1e293b })); barnRoof.position.set(130, 11, 90); scene.add(barnRoof);
+
+            // 8. THE STREETS (BOTTOM STRIP HORIZONTAL BLOCK - LINEAR HIGHWAY NETWORKS ROADWAY LINES)
+            const asphaltRoad = new THREE.Mesh(new THREE.PlaneGeometry(300, 15), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }));
+            asphaltRoad.rotateX(-Math.PI/2); asphaltRoad.position.set(0, 0.1, 140);
+            scene.add(asphaltRoad);
+
+            // Storm wall containment structure configuration settings parameters initialization
+            stormCircleMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 100, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.2, side: THREE.DoubleSide }));
+            stormCircleMesh.position.y = 50;
             scene.add(stormCircleMesh);
         }
 
@@ -570,119 +588,78 @@
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
 
-            // Spawn Friends
+            // Squad members
             myParty.members.forEach((name) => {
                 const avatar = createR6Avatar(0x38bdf8, LOADOUTS[0]);
-                avatar.position.set(Math.random()*8-4, 0, Math.random()*8-4);
+                avatar.position.set(Math.random()*12-6, 0, 45 + Math.random()*12);
                 scene.add(avatar);
                 entities.push({ avatar, isFriend: true, name, hp: 100, vx: 0, vz: 0, lastShotTime: 0 });
             });
 
-            // Spawn Adversaries
+            // Enemy bots map assignment dispersals over wide-area radius boundaries positions coordinates
             for(let i=0; i<totalOpponents; i++) {
                 const randLd = LOADOUTS[Math.floor(Math.random() * LOADOUTS.length)];
                 const avatar = createR6Avatar(0xb91c1c, randLd);
-                avatar.position.set(Math.random()*260-130, 0, Math.random()*260-130);
+                
+                // DISPERSED SPAWNING: Bot spread matches large map matrix scale positions perfectly
+                let ang = Math.random() * Math.PI * 2;
+                let rad = 50 + Math.random() * 240; // Disperses bots widely across map regions
+                avatar.position.set(Math.cos(ang)*rad, 0, Math.sin(ang)*rad);
                 scene.add(avatar);
 
                 entities.push({
-                    avatar: avatar,
-                    isFriend: false,
-                    name: `Bot_${i+1}`,
-                    hp: 100,
-                    loadout: randLd,
-                    vx: (Math.random()-0.5)*0.15,
-                    vz: (Math.random()-0.5)*0.15,
-                    lastShotTime: 0
+                    avatar: avatar, isFriend: false, name: `Bot_${i+1}`, hp: 100, loadout: randLd,
+                    vx: (Math.random()-0.5)*0.3, vz: (Math.random()-0.5)*0.3, lastShotTime: 0
                 });
             }
             updateHUD();
         }
 
-        // --- RUNTIME MOTION ANIMATION UTILITIES ---
+        // --- MOTION ANIMATIONS ---
         function applyR6WalkingAnimation(avatar, isMoving, timeFactor) {
-            const uData = avatar.userData;
-            if(!uData.leftArm) return;
-
+            const uData = avatar.userData; if(!uData.leftArm) return;
             if(isMoving) {
-                const angle = Math.sin(timeFactor * 12) * 0.6;
-                uData.leftArm.rotation.x = angle;
-                uData.rightArm.rotation.x = -angle;
-                uData.leftLeg.rotation.x = -angle;
-                uData.rightLeg.rotation.x = angle;
+                const angle = Math.sin(timeFactor * 14) * 0.7;
+                uData.leftArm.rotation.x = angle; uData.rightArm.rotation.x = -angle;
+                uData.leftLeg.rotation.x = -angle; uData.rightLeg.rotation.x = angle;
             } else {
-                // Return to idle state stance positions smoothly
-                uData.leftArm.rotation.x = 0;
-                uData.rightArm.rotation.x = 0;
-                uData.leftLeg.rotation.x = 0;
-                uData.rightLeg.rotation.x = 0;
+                uData.leftArm.rotation.x = 0; uData.rightArm.rotation.x = 0;
+                uData.leftLeg.rotation.x = 0; uData.rightLeg.rotation.x = 0;
             }
         }
 
         // --- PLAYER SYSTEMS CONTROLS INTERFACES ---
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
         function onKeyDown(e) {
             if(gameState === 'MENU' || gameState === 'PAUSED') return;
-            if(e.key.toLowerCase() === 'w') inputs.w = true;
-            if(e.key.toLowerCase() === 'a') inputs.a = true;
-            if(e.key.toLowerCase() === 's') inputs.s = true;
-            if(e.key.toLowerCase() === 'd') inputs.d = true;
+            if(e.key.toLowerCase() === 'w') inputs.w = true; if(e.key.toLowerCase() === 'a') inputs.a = true;
+            if(e.key.toLowerCase() === 's') inputs.s = true; if(e.key.toLowerCase() === 'd') inputs.d = true;
         }
         function onKeyUp(e) {
-            if(e.key.toLowerCase() === 'w') inputs.w = false;
-            if(e.key.toLowerCase() === 'a') inputs.a = false;
-            if(e.key.toLowerCase() === 's') inputs.s = false;
-            if(e.key.toLowerCase() === 'd') inputs.d = false;
+            if(e.key.toLowerCase() === 'w') inputs.w = false; if(e.key.toLowerCase() === 'a') inputs.a = false;
+            if(e.key.toLowerCase() === 's') inputs.s = false; if(e.key.toLowerCase() === 'd') inputs.d = false;
         }
-        function onMouseMove(e) {
-            if(gameState === 'PLAYING' || gameState === 'LOBBY') {
-                player.rotY -= e.movementX * 0.003;
-                player.avatar.rotation.y = player.rotY;
-            }
-        }
-        document.body.addEventListener('click', () => {
-            if((gameState === 'PLAYING' || gameState === 'LOBBY') && gameState !== 'PAUSED') {
-                document.body.requestPointerLock();
-            }
-        });
+        function onMouseMove(e) { if(gameState === 'PLAYING' || gameState === 'LOBBY') { player.rotY -= e.movementX * 0.003; player.avatar.rotation.y = player.rotY; } }
+        document.body.addEventListener('click', () => { if((gameState === 'PLAYING' || gameState === 'LOBBY') && gameState !== 'PAUSED') document.body.requestPointerLock(); });
 
         function onPlayerShoot() {
             if(gameState !== 'PLAYING') return;
+            const beam = new THREE.Mesh(new THREE.SphereGeometry(0.12, 4, 4), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+            beam.position.copy(player.avatar.position).y += 2;
+            const dx = -Math.sin(player.rotY), dz = -Math.cos(player.rotY);
+            particles.push({ mesh: beam, dx: dx * 2.2, dz: dz * 2.2, life: 35 }); scene.add(beam);
 
-            // Generate structural laser tracer beam graphics
-            const beamGeo = new THREE.SphereGeometry(0.12, 4, 4);
-            const beamMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
-            const beam = new THREE.Mesh(beamGeo, beamMat);
-            beam.position.copy(player.avatar.position);
-            beam.position.y += 2; // Arm height placement context
-
-            const dx = -Math.sin(player.rotY);
-            const dz = -Math.cos(player.rotY);
-
-            particles.push({ mesh: beam, dx: dx * 1.5, dz: dz * 1.5, life: 25 });
-            scene.add(beam);
-
-            // Deal Hitscan Verification computations
             entities.forEach(ent => {
                 if(ent.hp <= 0) return;
-                const dist = Math.sqrt(Math.pow(ent.avatar.position.x - player.avatar.position.x, 2) + Math.pow(ent.avatar.position.z - player.avatar.position.z, 2));
-                
                 const toEntX = ent.avatar.position.x - player.avatar.position.x;
                 const toEntZ = ent.avatar.position.z - player.avatar.position.z;
                 const len = Math.sqrt(toEntX*toEntX + toEntZ*toEntZ);
-                
                 const dot = ((toEntX/len) * dx) + ((toEntZ/len) * dz);
 
-                if(dot > 0.98 && len < 60) {
-                    if(ent.isFriend) return; // Safety check
+                if(dot > 0.99 && len < 140) { // Extended range checking metrics calculation structures matching larger map scale tracking profiles
+                    if(ent.isFriend) return;
                     ent.hp -= LOADOUTS[selectedLoadoutIndex].damage;
-                    
-                    if(ent.hp <= 0) {
-                        scene.remove(ent.avatar);
-                    }
+                    if(ent.hp <= 0) scene.remove(ent.avatar);
                 }
             });
             checkMatchConditions();
@@ -691,33 +668,27 @@
         function spawnBotLaserBeam(bot, targetPos) {
             const beam = new THREE.Mesh(new THREE.SphereGeometry(0.12,4,4), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
             beam.position.copy(bot.avatar.position).y += 2;
-
             const dir = new THREE.Vector3().subVectors(targetPos, bot.avatar.position).normalize();
-            particles.push({ mesh: beam, dx: dir.x * 1.2, dz: dir.z * 1.2, life: 25 });
-            scene.add(beam);
+            particles.push({ mesh: beam, dx: dir.x * 1.8, dz: dir.z * 1.8, life: 35 }); scene.add(beam);
         }
 
         function updateHUD() {
             const remainingEnemies = entities.filter(e => !e.isFriend && e.hp > 0).length + 1;
             document.getElementById('hud-alive-count').innerText = remainingEnemies;
-            document.getElementById('hud-hp-text').innerText = `${player.hp}/100`;
+            document.getElementById('hud-hp-text').innerText = `${Math.ceil(player.hp)}/100`;
             document.getElementById('hud-hp-bar').style.width = `${player.hp}%`;
             document.getElementById('hud-storm-radius').innerText = `${Math.round(stormRadius)}m`;
             document.getElementById('hud-weapon-name').innerText = LOADOUTS[selectedLoadoutIndex].weapon;
         }
 
         function checkMatchConditions() {
-            const aliveEnemies = entities.filter(e => !e.isFriend && e.hp > 0).length;
-            updateHUD();
+            const aliveEnemies = entities.filter(e => !e.isFriend && e.hp > 0).length; updateHUD();
             if(aliveEnemies <= 0 && gameState === 'PLAYING') endGameMatch(true);
         }
 
         function endGameMatch(isWin) {
-            gameState = 'END';
-            document.exitPointerLock();
-            hudIngame.classList.add('hidden');
-            screenMatchEnd.classList.remove('hidden');
-            
+            gameState = 'END'; document.exitPointerLock();
+            hudIngame.classList.add('hidden'); screenMatchEnd.classList.remove('hidden');
             const title = document.getElementById('match-end-title');
             title.innerText = isWin ? "VICTORY ROYALE!" : "ELIMINATED";
             title.className = isWin ? "text-6xl font-black text-amber-500 mb-4" : "text-6xl font-black text-red-500 mb-4";
@@ -732,102 +703,65 @@
             animationTime += 0.02;
 
             if(gameState === 'PLAYING' || gameState === 'LOBBY') {
-                let mX = 0, mZ = 0;
-                player.isMoving = false;
-
+                let mX = 0, mZ = 0; player.isMoving = false;
                 if (inputs.w) { mX -= Math.sin(player.rotY); mZ -= Math.cos(player.rotY); player.isMoving = true; }
                 if (inputs.s) { mX += Math.sin(player.rotY); mZ += Math.cos(player.rotY); player.isMoving = true; }
                 if (inputs.a) { mX -= Math.cos(player.rotY); mZ += Math.sin(player.rotY); player.isMoving = true; }
                 if (inputs.d) { mX += Math.cos(player.rotY); mZ -= Math.sin(player.rotY); player.isMoving = true; }
 
-                player.avatar.position.x += mX * player.speed;
-                player.avatar.position.z += mZ * player.speed;
-
+                player.avatar.position.x += mX * player.speed; player.avatar.position.z += mZ * player.speed;
                 applyR6WalkingAnimation(player.avatar, player.isMoving, animationTime);
 
-                // Set 3rd Person View Camera Placement Angle behind the avatar mesh object
-                camera.position.x = player.avatar.position.x + Math.sin(player.rotY) * 6;
-                camera.position.z = player.avatar.position.z + Math.cos(player.rotY) * 6;
-                camera.position.y = player.avatar.position.y + 4.5;
+                // DYNAMIC ZOOM VALUE UTILIZED LIVE HERE:
+                camera.position.x = player.avatar.position.x + Math.sin(player.rotY) * cameraZoomDistance;
+                camera.position.z = player.avatar.position.z + Math.cos(player.rotY) * cameraZoomDistance;
+                camera.position.y = player.avatar.position.y + (cameraZoomDistance * 0.65);
                 camera.lookAt(player.avatar.position.x - Math.sin(player.rotY)*10, player.avatar.position.y + 1.5, player.avatar.position.z - Math.cos(player.rotY)*10);
             }
 
             if(gameState === 'PLAYING') {
                 const now = Date.now();
+                if(stormRadius > minStormRadius) { stormRadius -= 0.06; stormCircleMesh.scale.set(stormRadius, 1, stormRadius); }
 
-                // Slow-shriniking Storm operations logic calculations
-                if(stormRadius > minStormRadius) {
-                    stormRadius -= 0.04; 
-                    stormCircleMesh.scale.set(stormRadius, 1, stormRadius);
-                }
-
-                // Verify structural damage rules outside Storm circle
                 const distFromCenter = Math.sqrt(Math.pow(player.avatar.position.x, 2) + Math.pow(player.avatar.position.z, 2));
-                if(distFromCenter > stormRadius) {
-                    player.hp -= 0.15; // Rapid tick damage accumulation
-                    updateHUD();
-                    if(player.hp <= 0) endGameMatch(false);
-                }
+                if(distFromCenter > stormRadius) { player.hp -= 0.15; updateHUD(); if(player.hp <= 0) endGameMatch(false); }
 
-                // Core Smart Dynamic Aggressive Enemy Trackers routines loop updates
                 entities.forEach(ent => {
                     if (ent.hp <= 0) return;
-
-                    // Apply ticking damage to bots trapped out in the storm
                     const botDist = Math.sqrt(Math.pow(ent.avatar.position.x, 2) + Math.pow(ent.avatar.position.z, 2));
-                    if(botDist > stormRadius) {
-                        ent.hp -= 0.4;
-                        if(ent.hp <= 0) scene.remove(ent.avatar);
-                    }
-
-                    if(ent.isFriend) return; // Teammates bypass hostile track checks
+                    if(botDist > stormRadius) { ent.hp -= 0.4; if(ent.hp <= 0) scene.remove(ent.avatar); }
+                    if(ent.isFriend) return;
 
                     const distanceToPlayer = ent.avatar.position.distanceTo(player.avatar.position);
                     
-                    // AGGRESSIVE TRACKER: If within 45 meters, locks on and engages player aggressively
-                    if(distanceToPlayer < 45) {
+                    // BOT TARGET ENGAGEMENT RANGE STRETCHED SENSITIVE MATCHING BIGGER ENVIRONMENTS
+                    if(distanceToPlayer < 85) { 
                         ent.avatar.lookAt(player.avatar.position.x, ent.avatar.position.y, player.avatar.position.z);
                         applyR6WalkingAnimation(ent.avatar, true, animationTime);
                         
-                        // Slowly creep toward target vector boundaries position coordinates
                         const dir = new THREE.Vector3().subVectors(player.avatar.position, ent.avatar.position).normalize();
-                        ent.avatar.position.x += dir.x * 0.06;
-                        ent.avatar.position.z += dir.z * 0.06;
+                        ent.avatar.position.x += dir.x * 0.14; ent.avatar.position.z += dir.z * 0.14;
 
-                        // High frequency attack firing operations processing routines
-                        if(now - ent.lastShotTime > 1200) { 
-                            ent.lastShotTime = now;
-                            spawnBotLaserBeam(ent, player.avatar.position);
-                            
-                            // 20% flat chance path routing calculation algorithm to land hits per trace sequence
-                            if(Math.random() < 0.20) {
-                                player.hp -= 8;
-                                updateHUD();
-                                if(player.hp <= 0) endGameMatch(false);
-                            }
+                        if(now - ent.lastShotTime > 1500) { 
+                            ent.lastShotTime = now; spawnBotLaserBeam(ent, player.avatar.position);
+                            if(Math.random() < 0.18) { player.hp -= 6; updateHUD(); if(player.hp <= 0) endGameMatch(false); }
                         }
                     } else {
-                        // Standard fallback idle roaming logic paths when searching targets across dimensions
-                        ent.avatar.position.x += ent.vx;
-                        ent.avatar.position.z += ent.vz;
-                        if (Math.abs(ent.avatar.position.x) > 180) ent.vx *= -1;
-                        if (Math.abs(ent.avatar.position.z) > 180) ent.vz *= -1;
-                        
+                        ent.avatar.position.x += ent.vx; ent.avatar.position.z += ent.vz;
+                        if (Math.abs(ent.avatar.position.x) > 380) ent.vx *= -1; if (Math.abs(ent.avatar.position.z) > 380) ent.vz *= -1;
                         applyR6WalkingAnimation(ent.avatar, true, animationTime);
                     }
                 });
             }
 
-            // Move Laser tracers
             for(let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i]; p.mesh.position.x += p.dx; p.mesh.position.z += p.dz; p.life--;
                 if(p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
             }
 
             if(gameState === 'MENU' && player.avatar) {
-                player.avatar.rotation.y += 0.01;
-                applyR6WalkingAnimation(player.avatar, false, 0);
-                camera.position.set(player.avatar.position.x, player.avatar.position.y + 3.5, player.avatar.position.z + 6);
+                player.avatar.rotation.y += 0.01; applyR6WalkingAnimation(player.avatar, false, 0);
+                camera.position.set(player.avatar.position.x, player.avatar.position.y + 3.5, player.avatar.position.z + cameraZoomDistance);
                 camera.lookAt(player.avatar.position.x, player.avatar.position.y + 2, player.avatar.position.z);
             }
 
