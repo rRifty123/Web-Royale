@@ -484,8 +484,13 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(100, 400, 100); scene.add(sun);
+            // UPGRADED BRIGHTNESS FIX: Swapped to a bright HemisphereLight to illuminate objects from all angles
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+            hemiLight.position.set(0, 300, 0);
+            scene.add(hemiLight);
 
             // Procedural Cloud formations
             const cloudGeo = new THREE.SphereGeometry(12, 7, 7);
@@ -587,13 +592,12 @@
             entities.forEach(e => scene.remove(e.avatar));
             entities = [];
 
-            // Enemy bots map assignment dispersals - UPDATED TO SPAWN FURTHER APART
+            // Enemy bots map assignment dispersals - Dispersed far apart
             for(let i=0; i<totalOpponents; i++) {
                 const randLd = LOADOUTS[Math.floor(Math.random() * LOADOUTS.length)];
                 const avatar = createR6Avatar(0xb91c1c, randLd);
                 
                 let ang = Math.random() * Math.PI * 2;
-                // Bots now spawn widespread across the deep layout map canvas boundaries
                 let rad = 120 + Math.random() * 250; 
                 avatar.position.set(Math.cos(ang)*rad, 0, Math.sin(ang)*rad);
                 scene.add(avatar);
